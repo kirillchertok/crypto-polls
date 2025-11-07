@@ -1,0 +1,34 @@
+@use './variables.scss';
+@import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
+
+* {
+    box-sizing: var(--box-sizing-base);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    vertical-align: baseline;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    text-size-adjust: none;
+    font-family: var(--font-family-mont);
+    font-weight: var(--font-weight-md);
+}
+*,
+*:before,
+*:after {
+    box-sizing: var(--box-sizing-base);
+}
+
+a {
+    cursor: pointer;
+    text-decoration: none;
+}
+
+html {
+    font-size: var(--font-size-base);
+}
+
+#root {
+    width: 100vw;
+    height: 100vh;
+}

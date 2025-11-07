@@ -1,0 +1,21 @@
+.header {
+    font-size: var(--font-size-xl);
+}
+.polls {
+    border: 2px solid var(--border-color-gray);
+    border-radius: var(--border-radius-lg);
+    width: 100%;
+    height: 90%;
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: var(--spacing-md);
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}

@@ -1,0 +1,49 @@
+import { useAppSelectore } from '@/store/hooks';
+import type { IPoll } from '@/types/IPoll';
+
+import { Button } from '../Button/Button';
+import styles from './Poll.module.scss';
+
+interface PollProps {
+    poll: IPoll;
+}
+
+export const Poll = ({ poll }: PollProps) => {
+    const { wallet } = useAppSelectore(state => state.crypto);
+    return (
+        <>
+            <div className={styles.poll}>
+                <div className={styles.info}>
+                    <div>
+                        <p className={styles['info--main']}>Topic: {poll.topic}</p>
+                        <p className={styles['info--main']}>Reward: {poll.reward} SOL</p>
+                    </div>
+                    <div>
+                        <p>
+                            Created by:{' '}
+                            <span>
+                                {poll.creator.slice(0, 6)} ... {poll.creator.slice(-6)}
+                            </span>
+                        </p>
+                        <p>
+                            Created at: <span>{poll.createdAt}</span>
+                        </p>
+                        <p>
+                            Active until: <span>{poll.createdAt}</span>
+                        </p>
+                    </div>
+                </div>
+                {wallet ? (
+                    <Button size='medium'>Take part</Button>
+                ) : (
+                    <Button
+                        size='medium'
+                        disabled
+                    >
+                        Connect your wallet first
+                    </Button>
+                )}
+            </div>
+        </>
+    );
+};
