@@ -1,0 +1,29 @@
+name: CI/CD Workflow
+
+on:
+    push:
+        branches:
+            - main
+            - 'feature/**'
+
+jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '20'
+
+            - name: Install dependencies
+              run: npm i
+
+            - name: Run linter
+              run: npm run lint
+
+            - name: Build project
+              run: npm run build
