@@ -2,7 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import * as bodyParser from "body-parser";
 import { config } from "dotenv";
-// import router from "./router";
+import { connectDB } from './db/db';
+import pollRoutes from './routes/polls';
+import resultRoutes from './routes/results';
 
 config();
 
@@ -10,19 +12,28 @@ const app = express();
 
 app.use(express.json())
 app.use(cors({
-    origin: process.env.CLIENT_URL,
-    credentials: true
-}))
+  origin: true,
+  credentials: true,
+}));
+
 app.use(bodyParser.json());
 
-// app.use('/api', router);
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
 
-const port = process.env.PORT
 
-if (!port) {
-    console.error('Error while starting the server')
-} else {
-    app.listen(parseInt(port), () => {
-        console.log('Server started on port: ' + port)
-    })
-}
+app.use('/api/polls', pollRoutes);
+app.use('/api/results', resultRoutes);
+
+const port = process.env.PORT || "5151"
+
+const startServer = async () => {
+  await connectDB();
+  
+  app.listen(parseInt(port), () => {
+    console.log(`Server running on port ${port}`);
+  });
+};
+
+startServer();

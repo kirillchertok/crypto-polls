@@ -1,0 +1,145 @@
+.container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.container--xs {
+    width: 50px;
+}
+
+.container--small {
+    width: 40%;
+}
+
+.container--default {
+    width: 50%;
+}
+
+.container--medium {
+    width: 75%;
+}
+
+.container--large {
+    width: 100%;
+}
+
+.input {
+    height: 50px;
+    width: 100%;
+    border-radius: var(--border-radius-lg);
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    background-color: var(--background-color-white);
+    transition: border 0.3s linear, color 0.3s linear;
+}
+
+.input--label {
+    margin-right: var(--spacing-sm);
+}
+
+.input--no_label {
+    margin: 0;
+}
+
+.input--focused {
+    border: var(--border-width-md) solid var(--border-color-gray);
+}
+
+.input--not_focused {
+    border: var(--border-width-md) solid var(--border-color-light-gray);
+}
+
+.input__field {
+    width: 100%;
+    height: 100%;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-md);
+    color: var(--font-color-purple);
+    padding: var(--spacing-md);
+    background-color: transparent;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.input__field[type='file'] {
+    padding: 0;
+    height: auto;
+}
+.input__field[type='radio'] {
+    padding: 0;
+}
+
+.input__field--focused {
+    color: var(--font-color-gray);
+}
+
+.input__field--not_focused {
+    color: var(--font-color-light-gray);
+}
+
+.input__field--focused::placeholder {
+    color: var(--font-color-gray);
+}
+
+.input__field--not_focused::placeholder {
+    color: var(--font-color-light-gray);
+}
+
+.input__field:focus {
+    outline: none;
+}
+
+.input__field--icon {
+    padding: var(--spacing-md);
+}
+
+.input__field--no_icon {
+    padding: var(--spacing-md) 0;
+}
+
+.label {
+    font-size: var(--font-size-md);
+}
+
+.input__icon {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .container {
+        width: 60%;
+    }
+}
+
+@media (max-width: 468px) {
+    .container {
+        width: 95%;
+    }
+}
+
+@media (max-width: 376px) {
+    .input {
+        height: 30px;
+    }
+    .input--focused {
+        border: var(--border-width-sm) solid var(--border-color-gray);
+    }
+
+    .input--not_focused {
+        border: var(--border-width-sm) solid var(--border-color-light-gray);
+    }
+    .label {
+        font-size: var(--font-size-sm);
+    }
+}

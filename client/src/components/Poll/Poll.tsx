@@ -1,7 +1,11 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+
+import $api from '@/api';
 import { useAppSelectore } from '@/store/hooks';
 import type { IPoll } from '@/types/IPoll';
 
-import { Button } from '../Button/Button';
+import { Button } from '../ui/Button/Button';
 import styles from './Poll.module.scss';
 
 interface PollProps {
@@ -10,13 +14,29 @@ interface PollProps {
 
 export const Poll = ({ poll }: PollProps) => {
     const { wallet } = useAppSelectore(state => state.crypto);
+    const [hasTaken, setHasTaken] = useState<boolean>(false);
+
+    useEffect(() => {
+        const check = async () => {
+            try {
+                const response = await $api.get(`/results/check/${poll.id}/${wallet}`);
+                setHasTaken(response.data.hasTaken);
+            } catch (e) {
+                console.log(e);
+            }
+        };
+
+        if (wallet && poll) {
+            check();
+        }
+    }, [wallet, poll]);
     return (
         <>
             <div className={styles.poll}>
                 <div className={styles.info}>
                     <div>
                         <p className={styles['info--main']}>Topic: {poll.topic}</p>
-                        <p className={styles['info--main']}>Reward: {poll.reward} SOL</p>
+                        <p className={styles['info--main']}>Reward: {poll.reward} RWD</p>
                     </div>
                     <div>
                         <p>
@@ -34,7 +54,18 @@ export const Poll = ({ poll }: PollProps) => {
                     </div>
                 </div>
                 {wallet ? (
-                    <Button size='medium'>Take part</Button>
+                    hasTaken ? (
+                        <Button
+                            size='medium'
+                            disabled
+                        >
+                            You already take this
+                        </Button>
+                    ) : (
+                        <Link to={`/passage/${poll.id}`}>
+                            <Button size='medium'>Take part</Button>
+                        </Link>
+                    )
                 ) : (
                     <Button
                         size='medium'

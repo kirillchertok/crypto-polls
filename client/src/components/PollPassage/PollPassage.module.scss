@@ -1,0 +1,109 @@
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header {
+    text-align: center;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.reward,
+.deadline {
+    text-align: center;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.progress {
+    text-align: center;
+    font-weight: bold;
+    margin: 20px 0;
+    color: #007bff;
+}
+
+.question {
+    background: transparent;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.options {
+    margin-top: 15px;
+}
+
+.option {
+    margin-bottom: 10px;
+}
+
+.radioLabel,
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: #e9ecef;
+    }
+
+    input {
+        margin-right: 10px;
+    }
+}
+
+.navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+}
+
+.navButton,
+.submitButton {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.navButton {
+    background-color: #6c757d;
+    color: white;
+
+    &:not(:disabled):hover {
+        background-color: #545b62;
+    }
+}
+
+.submitButton {
+    background-color: #28a745;
+    color: white;
+
+    &:not(:disabled):hover {
+        background-color: #218838;
+    }
+}
+
+.debug {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    font-size: 12px;
+
+    pre {
+        margin: 0;
+        white-space: pre-wrap;
+    }
+}

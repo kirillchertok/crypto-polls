@@ -6,6 +6,7 @@ export interface Question {
 }
 
 export interface IPoll {
+    id: string;
     creator: string;
     topic: string;
     reward: number;

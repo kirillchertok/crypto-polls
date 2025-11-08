@@ -1,4 +1,5 @@
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Link } from 'react-router-dom';
 
 import { usePhantomConnection } from '@/hooks/usePhantomConnection';
 import { useAppSelectore } from '@/store/hooks';
@@ -13,7 +14,9 @@ export const Header = () => {
     return (
         <>
             <header className={styles.header}>
-                <h1 className={styles.header__name}>Crypto Polls</h1>
+                <Link to='/'>
+                    <h1 className={styles.header__name}>Crypto Polls</h1>
+                </Link>
                 <div className={styles.header__btns}>
                     {wallet && <Nav />}
                     <WalletMultiButton />

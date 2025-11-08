@@ -2,11 +2,12 @@ import type { IPoll } from '@/types/IPoll';
 
 export const POOLS_DATA: IPoll[] = [
     {
+        id: '1',
         creator: 'wallet1',
         topic: 'dota2',
         reward: 100,
-        createdAt: '25.03.2005 12:12:12',
-        activeUntill: '27.03.2005 12:12:12',
+        createdAt: '25.03.2005',
+        activeUntill: '27.03.2005',
         questions: [
             {
                 type: 'one',
@@ -23,11 +24,12 @@ export const POOLS_DATA: IPoll[] = [
         ],
     },
     {
+        id: '2',
         creator: 'wallet2',
         topic: 'dota2',
         reward: 200,
-        createdAt: '01.01.2000 12:12:12',
-        activeUntill: '03.01.2000 12:12:12',
+        createdAt: '01.01.2000',
+        activeUntill: '03.01.2000',
         questions: [
             {
                 type: 'many',

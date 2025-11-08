@@ -8,6 +8,7 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    padding: var(--spacing-sm);
 }
 
 .info {
@@ -19,6 +20,6 @@
     align-items: center;
 
     &--main {
-        font-size: var(--font-size-lg);
+        font-size: var(--font-size-md);
     }
 }
