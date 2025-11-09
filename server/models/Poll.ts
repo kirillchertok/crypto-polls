@@ -13,6 +13,7 @@ export interface IPoll extends Document {
   createdAt: string;
   activeUntill: string;
   questions: IQuestion[];
+  vault: string;
 }
 
 const QuestionSchema: Schema = new Schema({
@@ -53,7 +54,11 @@ const PollSchema: Schema = new Schema({
     type: String, 
     required: true 
   },
-  questions: [QuestionSchema]
+  questions: [QuestionSchema],
+  vault: { 
+    type: String,
+    required: true
+  }
 }, {
   timestamps: true
 });

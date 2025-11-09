@@ -8,6 +8,7 @@ export interface Question {
 export interface IPoll {
     id: string;
     creator: string;
+    vault: string;
     topic: string;
     reward: number;
     createdAt: string;

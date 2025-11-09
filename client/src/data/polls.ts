@@ -4,6 +4,7 @@ export const POOLS_DATA: IPoll[] = [
     {
         id: '1',
         creator: 'wallet1',
+        vault: 'asd',
         topic: 'dota2',
         reward: 100,
         createdAt: '25.03.2005',
@@ -27,6 +28,7 @@ export const POOLS_DATA: IPoll[] = [
         id: '2',
         creator: 'wallet2',
         topic: 'dota2',
+        vault: 'asd',
         reward: 200,
         createdAt: '01.01.2000',
         activeUntill: '03.01.2000',

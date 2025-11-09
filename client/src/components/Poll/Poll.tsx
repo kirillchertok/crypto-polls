@@ -36,7 +36,9 @@ export const Poll = ({ poll }: PollProps) => {
                 <div className={styles.info}>
                     <div>
                         <p className={styles['info--main']}>Topic: {poll.topic}</p>
-                        <p className={styles['info--main']}>Reward: {poll.reward} RWD</p>
+                        <p className={styles['info--main']}>
+                            Reward: {poll.reward / 1_000_000} RWD
+                        </p>
                     </div>
                     <div>
                         <p>
