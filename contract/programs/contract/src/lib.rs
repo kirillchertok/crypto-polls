@@ -8,6 +8,7 @@ const MAX_QUESTIONS: usize = 10;
 const MAX_OPTIONS: usize = 10;
 const MAX_OPTION_LEN: usize = 100;
 const MAX_TOPIC_LEN: usize = 200;
+const MAX_RESULTS_TO_STORE: usize = 50; // Limit results stored on-chain
 
 #[program]
 pub mod contract {
@@ -84,10 +85,16 @@ pub mod contract {
             ErrorCode::AlreadyParticipated
         );
 
-        // Check if we can still accept more results
+        // Check if we can still accept more results (limit to prevent account size overflow)
+        require!(
+            poll_account.results.len() < MAX_RESULTS_TO_STORE,
+            ErrorCode::AllResultsRecorded
+        );
+        
+        // Also check against configured participant limit
         require!(
             poll_account.results.len() < poll_account.total_participants as usize,
-            ErrorCode::AllResultsRecorded
+            ErrorCode::AllRewardsClaimed
         );
 
         // Validate answers match questions
@@ -316,25 +323,31 @@ pub enum UserAnswer {
 
 fn calculate_poll_account_size(poll_id: &str, topic: &str, questions: &[Question]) -> usize {
     let base_size = 8 + // discriminator
-        4 + poll_id.len() +
-        32 + // creator
-        32 + // reward_token
-        8 + // reward_amount
-        4 + // total_participants
-        4 + // claimed_participants
-        1 + // bump
-        4 + topic.len() +
-        8 + // active_until
-        4; // questions vec length
+        4 + poll_id.len() + // poll_id string
+        32 + // creator pubkey
+        32 + // reward_token pubkey
+        8 + // reward_amount u64
+        4 + // total_participants u32
+        4 + // claimed_participants u32
+        1 + // bump u8
+        4 + topic.len() + // topic string
+        8 + // active_until i64
+        4; // questions vec length prefix
 
+    // Calculate actual questions size
     let questions_size: usize = questions
         .iter()
         .map(|q| {
-            1 + 4 + q.options.iter().map(|opt| 4 + opt.len()).sum::<usize>()
+            1 + // enum discriminator for QuestionType
+            4 + // options vec length prefix
+            q.options.iter().map(|opt| 4 + opt.len()).sum::<usize>() // each option
         })
         .sum();
 
-    let results_reserve = 4 + (1000 * 200);
+    // Reserve reasonable space for results
+    // Each result: 32 (pubkey) + 4 (vec len) + ~80 (answers estimate) + 8 (timestamp) + 1 (bool) = ~125 bytes
+    // Reserve for MAX_RESULTS_TO_STORE results
+    let results_reserve = 4 + (MAX_RESULTS_TO_STORE * 150); // 4 bytes vec len + results
 
     base_size + questions_size + results_reserve
 }
