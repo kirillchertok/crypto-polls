@@ -97,8 +97,8 @@ export const Polls = () => {
             // Check if vault has sufficient funds (but don't fail silently)
             if (anchorWallet) {
                 try {
-                    const hasFunds = await checkVaultBalance(poll.vault, poll.reward);
-                    console.log('Vault balance check:', { hasFunds, reward: poll.reward });
+                    const hasFunds = await checkVaultBalance(poll.vault, poll.reward / 1_000_000);
+                    console.log('Vault balance check:', { hasFunds, reward: poll.reward / 1_000_000 });
                     if (!hasFunds) {
                         console.log('Insufficient funds in vault, skipping');
                         continue;
