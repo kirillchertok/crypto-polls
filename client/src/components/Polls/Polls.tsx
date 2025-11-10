@@ -37,32 +37,71 @@ export const Polls = () => {
 
     // Check if poll is still active
     const isDateValid = (dateString: string): boolean => {
-        const pollDate = new Date(dateString);
-        const currentDate = new Date();
-        return pollDate >= currentDate;
+        try {
+            const pollDate = new Date(dateString);
+            const currentDate = new Date();
+            
+            // Set time to end of day for poll date (23:59:59)
+            pollDate.setHours(23, 59, 59, 999);
+            
+            console.log('Date check:', {
+                pollDateString: dateString,
+                pollDate: pollDate.toISOString(),
+                currentDate: currentDate.toISOString(),
+                isValid: pollDate >= currentDate
+            });
+            
+            return pollDate >= currentDate;
+        } catch (err) {
+            console.error('Error parsing date:', dateString, err);
+            return true; // If date parsing fails, show the poll anyway
+        }
     };
 
     // Filter polls by date, creator, and balance
     const filterPolls = async (allPolls: IPoll[]) => {
-        if (!allPolls.length || !anchorWallet) return [];
+        if (!allPolls.length) return [];
 
         const filtered: IPoll[] = [];
 
         for (const poll of allPolls) {
+            console.log('Checking poll:', {
+                id: poll.id,
+                creator: poll.creator,
+                currentWallet: wallet,
+                activeUntil: poll.activeUntil,
+                isExpired: !isDateValid(poll.activeUntil),
+                isOwnPoll: wallet && poll.creator === wallet,
+            });
+
             // Exclude expired polls
-            if (!isDateValid(poll.activeUntil)) continue;
-
-            // Exclude user's own polls
-            if (wallet && poll.creator === wallet) continue;
-
-            // Check if vault has sufficient funds
-            try {
-                const hasFunds = await checkVaultBalance(poll.vault, poll.reward);
-                if (!hasFunds) continue;
-            } catch (err) {
+            if (!isDateValid(poll.activeUntil)) {
+                console.log('Poll expired, skipping');
                 continue;
             }
 
+            // Exclude user's own polls
+            if (wallet && poll.creator === wallet) {
+                console.log('Own poll, skipping');
+                continue;
+            }
+
+            // Check if vault has sufficient funds (but don't fail silently)
+            if (anchorWallet) {
+                try {
+                    const hasFunds = await checkVaultBalance(poll.vault, poll.reward);
+                    console.log('Vault balance check:', { hasFunds, reward: poll.reward });
+                    if (!hasFunds) {
+                        console.log('Insufficient funds in vault, skipping');
+                        continue;
+                    }
+                } catch (err) {
+                    console.error('Error checking vault balance, including poll anyway:', err);
+                    // Include poll even if balance check fails - let smart contract handle it
+                }
+            }
+
+            console.log('Poll passed all filters, adding to list');
             filtered.push(poll);
         }
 
@@ -81,6 +120,7 @@ export const Polls = () => {
                 setLoading(true);
                 const { program } = getAnchorClient(anchorWallet);
                 const pollsData = await fetchAllPolls(program);
+                console.log('Fetched polls from blockchain:', pollsData);
                 setPolls(pollsData);
             } catch (error) {
                 console.error('Error fetching polls from blockchain:', error);
@@ -129,9 +169,25 @@ export const Polls = () => {
                     ))
                 ) : (
                     <div className={styles.noPolls}>
-                        {polls.length === 0
-                            ? 'No polls available on blockchain'
-                            : 'No active polls matching your criteria'}
+                        {polls.length === 0 ? (
+                            <div>
+                                <p>No polls available on blockchain</p>
+                                <p style={{ fontSize: '14px', marginTop: '10px', color: '#666' }}>
+                                    Create your first poll or wait for others to create one
+                                </p>
+                            </div>
+                        ) : (
+                            <div>
+                                <p>No active polls matching your criteria</p>
+                                <p style={{ fontSize: '14px', marginTop: '10px', color: '#666' }}>
+                                    Found {polls.length} poll(s) on blockchain, but they were filtered out.
+                                    <br />
+                                    Check browser console (F12) for details.
+                                    <br />
+                                    Possible reasons: expired, your own polls, or vault balance issues.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
