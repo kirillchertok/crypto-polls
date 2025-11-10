@@ -58,4 +58,13 @@ router.get('/check/:pollId/:wallet', async (req, res) => {
   }
 });
 
+router.delete('/clear', async (req, res) => {
+    try {
+        await PollResult.deleteMany({});
+        res.json({ message: 'All results deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error });
+    }
+});
+
 export default router;

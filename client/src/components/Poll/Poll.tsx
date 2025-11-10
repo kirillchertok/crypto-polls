@@ -51,7 +51,7 @@ export const Poll = ({ poll }: PollProps) => {
                             Created at: <span>{poll.createdAt}</span>
                         </p>
                         <p>
-                            Active until: <span>{poll.createdAt}</span>
+                            Active until: <span>{poll.activeUntill}</span>
                         </p>
                     </div>
                 </div>
@@ -61,7 +61,7 @@ export const Poll = ({ poll }: PollProps) => {
                             size='medium'
                             disabled
                         >
-                            You already take this
+                            You have already participated
                         </Button>
                     ) : (
                         <Link to={`/passage/${poll.id}`}>

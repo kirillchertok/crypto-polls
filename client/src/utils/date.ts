@@ -19,3 +19,15 @@ export const convertDate = (date: string) => {
 };
 
 export const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+export const isDateValid = (dateString: string): boolean => {
+    try {
+        const [day, month, year] = dateString.split('.').map(Number);
+        const pollDate = new Date(year, month - 1, day);
+        const currentDate = new Date();
+        pollDate.setHours(23, 59, 59, 999);
+        return pollDate >= currentDate;
+    } catch (error) {
+        return false;
+    }
+};

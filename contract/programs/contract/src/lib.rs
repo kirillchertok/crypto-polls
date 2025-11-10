@@ -7,7 +7,6 @@ declare_id!("FDVeBn4zL2WjX8jPBWoja4z4UUjFixKbYxpgCExx2DeE");
 pub mod contract {
     use super::*;
 
-    // Создание опроса и депозит наград
     pub fn create_poll(
         ctx: Context<CreatePoll>,
         poll_id: String,
@@ -16,7 +15,6 @@ pub mod contract {
     ) -> Result<()> {
         let poll_account = &mut ctx.accounts.poll_account;
         
-        // Сохраняем данные опроса
         poll_account.poll_id = poll_id;
         poll_account.creator = ctx.accounts.creator.key();
         poll_account.reward_token = ctx.accounts.reward_token.key();
@@ -25,11 +23,9 @@ pub mod contract {
         poll_account.claimed_participants = 0;
         poll_account.bump = ctx.bumps.poll_account;
         
-        // Вычисляем общее количество токенов для депозита
         let total_rewards = reward_amount.checked_mul(total_participants as u64)
             .ok_or(ErrorCode::CalculationOverflow)?;
         
-        // Переводим токены в PDA vault
         let cpi_accounts = Transfer {
             from: ctx.accounts.creator_token_account.to_account_info(),
             to: ctx.accounts.poll_vault.to_account_info(),
@@ -45,31 +41,26 @@ pub mod contract {
         Ok(())
     }
 
-    // Выплата награды пользователю
     pub fn claim_reward(
         ctx: Context<ClaimReward>,
         poll_id: String,
     ) -> Result<()> {
-        // Проверяем что poll_id совпадает
         require!(
             ctx.accounts.poll_account.poll_id == poll_id,
             ErrorCode::InvalidPollId
         );
         
-        // Проверяем что пользователь еще не получал награду
         require!(
             ctx.accounts.poll_account.claimed_participants < ctx.accounts.poll_account.total_participants,
             ErrorCode::AllRewardsClaimed
         );
         
-        // Проверяем что на vault достаточно токенов
         let poll_vault = &ctx.accounts.poll_vault;
         require!(
             poll_vault.amount >= ctx.accounts.poll_account.reward_amount,
             ErrorCode::InsufficientFunds
         );
 
-        // Переводим награду пользователю
         let seeds = &[
             b"poll",
             poll_id.as_bytes(),
@@ -88,7 +79,6 @@ pub mod contract {
         
         token::transfer(cpi_ctx, ctx.accounts.poll_account.reward_amount)?;
         
-        // Обновляем счетчик
         ctx.accounts.poll_account.claimed_participants += 1;
         
         msg!("Reward claimed by {}", ctx.accounts.user.key());
@@ -98,7 +88,6 @@ pub mod contract {
         Ok(())
     }
 
-    // Возврат средств создателю (если опрос отменен)
     pub fn refund_poll(
         ctx: Context<RefundPoll>,
         poll_id: String,
@@ -108,7 +97,6 @@ pub mod contract {
             ErrorCode::InvalidPollId
         );
         
-        // Только создатель может вернуть средства
         require!(
             ctx.accounts.creator.key() == ctx.accounts.poll_account.creator,
             ErrorCode::Unauthorized
@@ -121,7 +109,6 @@ pub mod contract {
         ];
         let signer = &[&seeds[..]];
         
-        // Возвращаем все оставшиеся токены
         let refund_amount = ctx.accounts.poll_vault.amount;
         
         let cpi_accounts = Transfer {
@@ -147,7 +134,6 @@ pub struct CreatePoll<'info> {
     #[account(mut)]
     pub creator: Signer<'info>,
     
-    /// CHECK: Это PDA для хранения данных опроса
     #[account(
         init,
         payer = creator,
@@ -157,14 +143,11 @@ pub struct CreatePoll<'info> {
     )]
     pub poll_account: Account<'info, PollAccount>,
     
-    // Токен который используется для наград
     pub reward_token: Account<'info, anchor_spl::token::Mint>,
     
-    // Токен-аккаунт создателя
     #[account(mut)]
     pub creator_token_account: Account<'info, TokenAccount>,
     
-    // PDA vault для хранения наград
     #[account(
         init,
         payer = creator,
@@ -192,7 +175,6 @@ pub struct ClaimReward<'info> {
     )]
     pub poll_account: Account<'info, PollAccount>,
     
-    // PDA vault
     #[account(
         mut,
         seeds = [b"vault", poll_id.as_bytes()],
@@ -200,7 +182,6 @@ pub struct ClaimReward<'info> {
     )]
     pub poll_vault: Account<'info, TokenAccount>,
     
-    // Токен-аккаунт пользователя для получения награды
     #[account(mut)]
     pub user_token_account: Account<'info, TokenAccount>,
     
@@ -220,7 +201,6 @@ pub struct RefundPoll<'info> {
     )]
     pub poll_account: Account<'info, PollAccount>,
     
-    // PDA vault
     #[account(
         mut,
         seeds = [b"vault", poll_id.as_bytes()],
@@ -228,7 +208,6 @@ pub struct RefundPoll<'info> {
     )]
     pub poll_vault: Account<'info, TokenAccount>,
     
-    // Токен-аккаунт создателя для возврата средств
     #[account(mut)]
     pub creator_token_account: Account<'info, TokenAccount>,
     
@@ -237,24 +216,17 @@ pub struct RefundPoll<'info> {
 
 #[account]
 pub struct PollAccount {
-    pub poll_id: String,           // ID из MongoDB
-    pub creator: Pubkey,           // Создатель опроса
-    pub reward_token: Pubkey,      // Токен для наград (твой CECBnz...)
-    pub reward_amount: u64,        // Награда за одного участника
-    pub total_participants: u32,   // Всего участников
-    pub claimed_participants: u32, // Уже получили награду
-    pub bump: u8,                  // PDA bump
+    pub poll_id: String,
+    pub creator: Pubkey,
+    pub reward_token: Pubkey,
+    pub reward_amount: u64,
+    pub total_participants: u32,
+    pub claimed_participants: u32,
+    pub bump: u8,
 }
 
 impl PollAccount {
-    pub const LEN: usize = 8 +      // discriminator
-        50 +                        // poll_id (String)
-        32 +                        // creator
-        32 +                        // reward_token
-        8 +                         // reward_amount
-        4 +                         // total_participants
-        4 +                         // claimed_participants
-        1;                          // bump
+    pub const LEN: usize = 8 + 50 + 32 + 32 + 8 + 4 + 4 + 1;
 }
 
 #[error_code]

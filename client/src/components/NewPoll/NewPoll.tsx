@@ -1,23 +1,17 @@
-import * as anchor from '@coral-xyz/anchor';
-import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { useAnchorWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { v4 } from 'uuid';
 
 import $api from '@/api';
 import type { Question, QuestionType } from '@/types/IPoll';
 import { convertDate, formatDate, getCurrentDate, getTomorrow } from '@/utils/date';
-import { getAnchorClient } from '@/utils/solana/anchorClient';
+import { createPollAnchor } from '@/utils/solana/createPollAnchor';
 
 import { Button } from '../ui/Button/Button';
 import { Input } from '../ui/Input/Input';
 import styles from './NewPoll.module.scss';
 
 const minDate = formatDate(getTomorrow());
-
-const REWARD_TOKEN_MINT = new PublicKey('DCV2LkCa623dRcBPFEfcDJFVYtYqUrWPRvX1zVCXVrjS');
 
 export const NewPoll = () => {
     const [topic, setTopic] = useState('');
@@ -63,51 +57,10 @@ export const NewPoll = () => {
             return;
         }
 
-        const pollId = v4().replace(/-/g, '').slice(0, 32);
-        const rewardPerUser = Math.floor((total * 1_000_000) / passages);
-        const totalParticipants = passages;
-
         try {
             setLoading(true);
-            const { program } = getAnchorClient(walletFull);
-
-            // PDA адреса для poll и vault
-            const [pollAccountPDA] = PublicKey.findProgramAddressSync(
-                [Buffer.from('poll'), Buffer.from(pollId)],
-                program.programId
-            );
-
-            const [pollVaultPDA] = PublicKey.findProgramAddressSync(
-                [Buffer.from('vault'), Buffer.from(pollId)],
-                program.programId
-            );
-
-            // Ассоциированный токен-аккаунт создателя (кошелька)
-            const creatorTokenAccount = await getAssociatedTokenAddress(
-                REWARD_TOKEN_MINT,
-                walletFull.publicKey
-            );
-
-            console.log('Creating poll...');
-            console.log('PollAccount:', pollAccountPDA.toBase58());
-            console.log('Vault:', pollVaultPDA.toBase58());
-            console.log('Creator token account:', creatorTokenAccount.toBase58());
-
-            // Вызов on-chain функции create_poll
-            await program.methods
-                .createPoll(pollId, new anchor.BN(rewardPerUser), totalParticipants)
-                .accounts({
-                    creator: walletFull.publicKey,
-                    pollAccount: pollAccountPDA,
-                    rewardToken: REWARD_TOKEN_MINT,
-                    creatorTokenAccount,
-                    pollVault: pollVaultPDA,
-                    systemProgram: anchor.web3.SystemProgram.programId,
-                    tokenProgram: TOKEN_PROGRAM_ID,
-                })
-                .rpc();
-
-            console.log('Poll successfully created on Solana blockchain!');
+            const { pollId, pollVaultPDA, rewardPerUser, totalParticipants } =
+                await createPollAnchor({ total, passages, walletFull });
 
             const response = await $api.post('/polls', {
                 id: pollId,
@@ -122,7 +75,6 @@ export const NewPoll = () => {
             });
 
             if (response.data) {
-                console.log('Poll saved to backend:', response.data);
                 navigate('/');
             }
         } catch (err) {
@@ -202,20 +154,22 @@ export const NewPoll = () => {
                     </div>
                 </div>
 
-                <Input
-                    type='number'
-                    sizeType='small'
-                    label='Total tokens to deposit'
-                    value={total}
-                    onChange={e => setTotal(Number(e.target.value))}
-                />
-                <Input
-                    type='number'
-                    sizeType='small'
-                    label='Number of participants'
-                    value={passages}
-                    onChange={e => setPassages(Number(e.target.value))}
-                />
+                <div className={styles.amount}>
+                    <Input
+                        type='number'
+                        sizeType='small'
+                        label='Total tokens to deposit'
+                        value={total}
+                        onChange={e => setTotal(Number(e.target.value))}
+                    />
+                    <Input
+                        type='number'
+                        sizeType='small'
+                        label='Number of participants'
+                        value={passages}
+                        onChange={e => setPassages(Number(e.target.value))}
+                    />
+                </div>
                 <Input
                     sizeType='small'
                     label='Active until'
