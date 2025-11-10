@@ -1,8 +1,10 @@
+import { useAnchorWallet } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
 
-import $api from '@/api';
 import type { IPoll } from '@/types/IPoll';
-import type { IPollResult } from '@/types/IPollResults';
+import { getAnchorClient } from '@/utils/solana/anchorClient';
+import type { PollResult } from '@/utils/solana/fetchPollResults';
+import { fetchPollResults } from '@/utils/solana/fetchPollResults';
 
 import styles from './PollResults.module.scss';
 
@@ -17,18 +19,25 @@ interface ResultStats {
 }
 
 export const PollResults = ({ poll }: PollResultsProps) => {
-    const [results, setResults] = useState<IPollResult[]>([]);
+    const [results, setResults] = useState<PollResult[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const anchorWallet = useAnchorWallet();
 
     useEffect(() => {
         const fetchResults = async () => {
+            if (!anchorWallet) {
+                setLoading(false);
+                return;
+            }
+
             try {
                 setLoading(true);
-                const response = await $api.get(`/results/poll/${poll.id}`);
-                setResults(response.data);
+                const { program } = getAnchorClient(anchorWallet);
+                const pollResults = await fetchPollResults(program, poll.id);
+                setResults(pollResults);
             } catch (err) {
-                setError('Failed to fetch results');
+                setError('Failed to fetch results from blockchain');
                 console.error('Error:', err);
             } finally {
                 setLoading(false);
@@ -36,7 +45,7 @@ export const PollResults = ({ poll }: PollResultsProps) => {
         };
 
         fetchResults();
-    }, [poll.id]);
+    }, [poll.id, anchorWallet]);
 
     const calculateStats = (): ResultStats => {
         const stats: ResultStats = {};
@@ -50,15 +59,17 @@ export const PollResults = ({ poll }: PollResultsProps) => {
 
         results.forEach(result => {
             result.answers.forEach((answer, questionIndex) => {
-                if (Array.isArray(answer)) {
-                    answer.forEach(option => {
+                if (answer.type === 'Multiple') {
+                    const values = answer.value as string[];
+                    values.forEach(option => {
                         if (stats[questionIndex][option] !== undefined) {
                             stats[questionIndex][option]++;
                         }
                     });
                 } else {
-                    if (stats[questionIndex][answer] !== undefined) {
-                        stats[questionIndex][answer]++;
+                    const value = answer.value as string;
+                    if (stats[questionIndex][value] !== undefined) {
+                        stats[questionIndex][value]++;
                     }
                 }
             });

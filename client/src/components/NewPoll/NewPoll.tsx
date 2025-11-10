@@ -1,14 +1,9 @@
-import * as anchor from '@coral-xyz/anchor';
-import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { useAnchorWallet } from '@solana/wallet-adapter-react';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Web3Storage } from 'web3.storage';
 
-import { REWARD_TOKEN_MINT, WEB3_STORAGE_TOKEN } from '@/constants/token';
 import { formatDate, getTomorrow } from '@/utils/date';
-import { getAnchorClient } from '@/utils/solana/anchorClient';
+import { createPollAnchor } from '@/utils/solana/createPollAnchor';
 
 import { Button } from '../ui/Button/Button';
 import { Input } from '../ui/Input/Input';
@@ -91,103 +86,45 @@ export const NewPoll = () => {
         }));
     };
 
-    const generatePollId = (): string => {
-        return `poll_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    };
-
-    const convertDateToTimestamp = (dateString: string): anchor.BN => {
-        const timestamp = Math.floor(new Date(dateString).getTime() / 1000);
-        return new anchor.BN(timestamp);
-    };
-
-    // 🔹 Функция загрузки JSON на IPFS через Web3.Storage
-    const uploadPollToIPFS = async (poll: {
-        topic: string;
-        questions: any[];
-        answers: any[];
-        activeUntil: any;
-    }) => {
-        const client = new Web3Storage({ token: WEB3_STORAGE_TOKEN });
-        const blob = new Blob([JSON.stringify(poll)], { type: 'application/json' });
-        const file = new File([blob], 'poll.json');
-        const cid = await client.put([file]);
-        return `https://${cid}.ipfs.dweb.link/poll.json`;
-    };
-
     const createPoll = async () => {
         if (!walletFull) return;
 
-        // 🔹 Валидация формы
+        // Validate form
         if (!form.topic.trim()) return alert('Please enter a topic');
         if (form.total <= 0) return alert('Please enter a positive reward amount');
         if (form.passages <= 0) return alert('Please enter a positive number of participants');
         if (form.questions.some(q => q.options.length === 0))
             return alert('All questions must have at least one option');
+        if (form.questions.length > 10) return alert('Maximum 10 questions allowed');
 
         for (const question of form.questions) {
+            if (question.options.length > 10) return alert('Maximum 10 options per question');
             for (const option of question.options) {
                 if (!option.trim()) return alert('All options must have text');
+                if (option.length > 100) return alert('Option text must be under 100 characters');
             }
         }
 
+        if (form.topic.length > 200) return alert('Topic must be under 200 characters');
+
         try {
             setLoading(true);
-            const { program, provider } = getAnchorClient(walletFull);
 
-            // 🔹 Генерация pollId и timestamp
-            const pollId = generatePollId();
-            const activeUntilTimestamp = convertDateToTimestamp(form.activeUntill);
-
-            // 🔹 Загрузка опроса на IPFS
-            const ipfsUri = await uploadPollToIPFS({
+            await createPollAnchor({
                 topic: form.topic,
+                rewardPerUser: form.total,
+                totalParticipants: form.passages,
+                activeUntil: form.activeUntill,
                 questions: form.questions,
-                answers: [],
-                activeUntil: activeUntilTimestamp,
+                walletFull,
             });
 
-            // 🔹 Находим PDA для аккаунтов
-            const [pollAccountPDA] = PublicKey.findProgramAddressSync(
-                [Buffer.from('poll'), Buffer.from(pollId)],
-                program.programId
-            );
-
-            const [pollVaultPDA] = PublicKey.findProgramAddressSync(
-                [Buffer.from('vault'), Buffer.from(pollId)],
-                program.programId
-            );
-
-            const [registryPDA] = PublicKey.findProgramAddressSync(
-                [Buffer.from('registry')],
-                program.programId
-            );
-
-            const rewardTokenMint = new PublicKey(REWARD_TOKEN_MINT);
-            const creatorTokenAccount = await getAssociatedTokenAddress(
-                rewardTokenMint,
-                walletFull.publicKey
-            );
-
-            // 🔹 Вызов метода createPoll на блокчейне
-            const tx = await program.methods
-                .createPoll(pollId, new anchor.BN(form.total), form.passages, ipfsUri)
-                .accounts({
-                    creator: walletFull.publicKey,
-                    pollAccount: pollAccountPDA,
-                    registry: registryPDA,
-                    rewardToken: rewardTokenMint,
-                    creatorTokenAccount: creatorTokenAccount,
-                    pollVault: pollVaultPDA,
-                    systemProgram: SystemProgram.programId,
-                    tokenProgram: TOKEN_PROGRAM_ID,
-                })
-                .rpc();
-
-            console.log('Poll created successfully. Transaction:', tx);
+            alert('Poll created successfully on the blockchain!');
             navigate('/');
         } catch (err: any) {
             console.error('Error creating poll:', err);
-            alert('Failed to create poll. See console for details.');
+            const errorMsg = err.message || 'Failed to create poll. See console for details.';
+            alert(`Error: ${errorMsg}`);
         } finally {
             setLoading(false);
         }

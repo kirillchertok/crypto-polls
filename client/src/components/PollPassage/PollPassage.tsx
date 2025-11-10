@@ -1,14 +1,12 @@
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { useAnchorWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 
-import $api from '@/api';
 import { useAppSelectore } from '@/store/hooks';
 import type { IPoll } from '@/types/IPoll';
 import { getAnchorClient } from '@/utils/solana/anchorClient';
-import { createUserTokenAccount } from '@/utils/solana/createUserTokenAccount';
+import { fetchAllPolls } from '@/utils/solana/fetchAllPolls';
+import { submitAndClaim } from '@/utils/solana/submitAndClaim';
 
 import { Button } from '../ui/Button/Button';
 import styles from './PollPassage.module.scss';
@@ -32,76 +30,63 @@ export const PollPassage = ({ id }: PollPassageProps) => {
 
     useEffect(() => {
         const fetchPoll = async () => {
+            if (!anchorWallet) return;
+
             try {
                 setLoading(true);
-                const response = await $api.get(`/polls/${id}`);
-                setPoll(response.data);
+                const { program } = getAnchorClient(anchorWallet);
+                const polls = await fetchAllPolls(program);
+                const foundPoll = polls.find(p => p.id === id);
+                
+                if (foundPoll) {
+                    setPoll(foundPoll);
+                } else {
+                    setError('Poll not found');
+                }
             } catch (err) {
-                setError('Failed to fetch poll');
+                console.error('Error fetching poll:', err);
+                setError('Failed to fetch poll from blockchain');
             } finally {
                 setLoading(false);
             }
         };
 
-        if (id) {
+        if (id && anchorWallet) {
             fetchPoll();
         }
-    }, [id]);
+    }, [id, anchorWallet]);
 
-    const claimReward = async () => {
-        if (!anchorWallet || !poll) {
-            return;
-        }
+    const handleSubmit = async () => {
+        if (!poll || !anchorWallet) return;
 
         try {
             setClaiming(true);
-            const { program } = getAnchorClient(anchorWallet);
 
-            const [pollAccountPDA] = PublicKey.findProgramAddressSync(
-                [Buffer.from('poll'), Buffer.from(poll.id)],
-                program.programId
-            );
+            // Convert answers to the format expected by the contract
+            const formattedAnswers = userAnswers.map((answer, index) => {
+                const question = poll.questions[index];
+                if (question.type === 'one') {
+                    return { type: 'Single' as const, value: answer as string };
+                } else {
+                    return { type: 'Multiple' as const, value: answer as string[] };
+                }
+            });
 
-            const pollVault = new PublicKey(poll.vault);
+            // Submit answers and claim reward in one flow
+            await submitAndClaim({
+                pollId: poll.id,
+                answers: formattedAnswers,
+                walletFull: anchorWallet,
+            });
 
-            const userTokenAccount = await createUserTokenAccount({ anchorWallet });
-
-            await program.methods
-                .claimReward(poll.id)
-                .accounts({
-                    user: anchorWallet.publicKey,
-                    pollAccount: pollAccountPDA,
-                    pollVault: pollVault,
-                    userTokenAccount: userTokenAccount,
-                    tokenProgram: TOKEN_PROGRAM_ID,
-                })
-                .rpc();
+            alert('Poll completed and reward claimed successfully!');
+            navigate('/');
         } catch (err: any) {
-            console.error('Error claiming reward:', err);
+            console.error('Error submitting poll:', err);
+            const errorMsg = err.message || 'Failed to submit poll';
+            alert(`Error: ${errorMsg}`);
         } finally {
             setClaiming(false);
-        }
-    };
-
-    const handleSubmit = async () => {
-        if (!poll) return;
-
-        try {
-            const results = {
-                pollId: poll.id,
-                userWallet: wallet,
-                answers: userAnswers,
-                timestamp: new Date().toISOString(),
-            };
-
-            const response = await $api.post('/results', results);
-
-            if (response.data) {
-                await claimReward();
-                navigate('/');
-            }
-        } catch (err) {
-            console.error('Error submitting poll:', err);
         }
     };
 
@@ -169,7 +154,7 @@ export const PollPassage = ({ id }: PollPassageProps) => {
         <div className={styles.container}>
             <h1 className={styles.header}>{poll.topic}</h1>
             <p className={styles.reward}>Reward: {poll.reward} RWD</p>
-            <p className={styles.deadline}>Active until: {poll.activeUntill}</p>
+            <p className={styles.deadline}>Active until: {poll.activeUntil}</p>
 
             <div className={styles.progress}>
                 Question {currentQuestionIndex + 1} / {poll.questions.length}

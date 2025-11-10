@@ -1,4 +1,3 @@
-import * as anchor from '@coral-xyz/anchor';
 import { useAnchorWallet } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { useEffect, useState } from 'react';
@@ -11,79 +10,54 @@ import { fetchAllPolls } from '@/utils/solana/fetchAllPolls';
 import { Poll } from '../Poll/Poll';
 import styles from './Polls.module.scss';
 
-interface BlockchainPoll {
-    pollId: string;
-    creator: PublicKey;
-    topic: string;
-    rewardAmount: number;
-    totalParticipants: number;
-    claimedParticipants: number;
-    activeUntil: number;
-    questions: {
-        questionType: { one?: object; many?: object };
-        options: string[];
-    }[];
-}
-
 export const Polls = () => {
-    const [polls, setPolls] = useState<BlockchainPoll[]>([]);
-    const [filteredPolls, setFilteredPolls] = useState<BlockchainPoll[]>([]);
+    const [polls, setPolls] = useState<IPoll[]>([]);
+    const [filteredPolls, setFilteredPolls] = useState<IPoll[]>([]);
     const [loading, setLoading] = useState(true);
     const { wallet } = useAppSelectore(state => state.crypto);
     const anchorWallet = useAnchorWallet();
 
-    // 📡 Получаем все PollAccount с блокчейна
-
-    // ✅ Проверяем баланс в хранилище пула
-    const checkVaultBalance = async (
-        vaultAddress: string,
-        requiredAmount: number
-    ): Promise<boolean> => {
+    // Check if poll has sufficient balance in vault
+    const checkVaultBalance = async (vaultAddress: string, requiredAmount: number): Promise<boolean> => {
         if (!anchorWallet) return false;
 
         try {
             const { provider } = getAnchorClient(anchorWallet);
             const vaultPublicKey = new PublicKey(vaultAddress);
 
-            const vaultAccountInfo = await provider.connection.getTokenAccountBalance(
-                vaultPublicKey
-            );
+            const vaultAccountInfo = await provider.connection.getTokenAccountBalance(vaultPublicKey);
             const currentBalance = vaultAccountInfo.value.uiAmount || 0;
 
-            // rewardAmount у тебя в "токенах" (обычно 1e6 = 1 USDC и т.п.)
-            return currentBalance >= requiredAmount / 1_000_000;
+            return currentBalance >= requiredAmount;
         } catch (error) {
+            console.error('Error checking vault balance:', error);
             return false;
         }
     };
 
-    const isDateValid = (timestamp: number): boolean => {
-        const currentTimestamp = Math.floor(Date.now() / 1000);
-        return timestamp > currentTimestamp;
+    // Check if poll is still active
+    const isDateValid = (dateString: string): boolean => {
+        const pollDate = new Date(dateString);
+        const currentDate = new Date();
+        return pollDate >= currentDate;
     };
 
-    // 🧩 Фильтрация по дате, создателю и балансу
-    const filterPolls = async (allPolls: BlockchainPoll[]) => {
+    // Filter polls by date, creator, and balance
+    const filterPolls = async (allPolls: IPoll[]) => {
         if (!allPolls.length || !anchorWallet) return [];
 
-        const filtered: BlockchainPoll[] = [];
-        const { program } = getAnchorClient(anchorWallet);
+        const filtered: IPoll[] = [];
 
         for (const poll of allPolls) {
-            // исключаем просроченные
+            // Exclude expired polls
             if (!isDateValid(poll.activeUntil)) continue;
 
-            // исключаем свои опросы
-            if (wallet && poll.creator.toBase58() === wallet) continue;
+            // Exclude user's own polls
+            if (wallet && poll.creator === wallet) continue;
 
+            // Check if vault has sufficient funds
             try {
-                const [vaultPDA] = PublicKey.findProgramAddressSync(
-                    [Buffer.from('vault'), Buffer.from(poll.pollId)],
-                    program.programId
-                );
-
-                const hasFunds = await checkVaultBalance(vaultPDA.toBase58(), poll.rewardAmount);
-
+                const hasFunds = await checkVaultBalance(poll.vault, poll.reward);
                 if (!hasFunds) continue;
             } catch (err) {
                 continue;
@@ -95,7 +69,7 @@ export const Polls = () => {
         return filtered;
     };
 
-    // ⚡ Загружаем опросы при инициализации
+    // Load polls from blockchain on mount
     useEffect(() => {
         const loadPolls = async () => {
             if (!anchorWallet) {
@@ -106,7 +80,6 @@ export const Polls = () => {
             try {
                 setLoading(true);
                 const { program } = getAnchorClient(anchorWallet);
-
                 const pollsData = await fetchAllPolls(program);
                 setPolls(pollsData);
             } catch (error) {
@@ -120,7 +93,7 @@ export const Polls = () => {
         loadPolls();
     }, [anchorWallet]);
 
-    // 🔍 Применяем фильтры
+    // Apply filters when polls or wallet changes
     useEffect(() => {
         const applyFilters = async () => {
             if (polls.length > 0 && anchorWallet) {
@@ -134,30 +107,7 @@ export const Polls = () => {
         applyFilters();
     }, [polls, wallet, anchorWallet]);
 
-    // 🔄 Преобразование PollAccount -> IPoll (для твоего UI)
-    const convertToIPoll = (poll: BlockchainPoll): IPoll => {
-        const [vaultPDA] = PublicKey.findProgramAddressSync(
-            [Buffer.from('vault'), Buffer.from(poll.pollId)],
-            new PublicKey('FDVeBn4zL2WjX8jPBWoja4z4UUjFixKbYxpgCExx2DeE') // id твоей программы
-        );
-
-        return {
-            id: poll.pollId,
-            creator: poll.creator.toBase58(),
-            vault: vaultPDA.toBase58(),
-            topic: poll.topic,
-            reward: poll.rewardAmount,
-            totalParticipants: poll.totalParticipants,
-            claimedParticipants: poll.claimedParticipants,
-            activeUntil: new Date(poll.activeUntil * 1000).toLocaleDateString('ru-RU'),
-            questions: poll.questions.map(q => ({
-                type: q.questionType.one ? 'one' : 'many',
-                options: q.options,
-            })),
-        };
-    };
-
-    // 🖼️ UI
+    // UI
     if (!anchorWallet) {
         return <div className={styles.loading}>Please connect your wallet to view polls</div>;
     }
@@ -173,8 +123,8 @@ export const Polls = () => {
                 {filteredPolls.length > 0 ? (
                     filteredPolls.map(poll => (
                         <Poll
-                            key={poll.pollId}
-                            poll={convertToIPoll(poll)}
+                            key={poll.id}
+                            poll={poll}
                         />
                     ))
                 ) : (

@@ -1,8 +1,10 @@
 import * as anchor from '@coral-xyz/anchor';
 import { sha256 } from '@noble/hashes/sha256';
 
+import type { IPoll, Question } from '@/types/IPoll';
+
 /**
- * Генерация дискриминатора по имени аккаунта (8 байт)
+ * Generate discriminator for account type (8 bytes)
  */
 function getDiscriminator(name: string): Buffer {
     const preimage = `account:${name}`;
@@ -11,13 +13,13 @@ function getDiscriminator(name: string): Buffer {
 }
 
 /**
- * Получение всех PollAccount из блокчейна
+ * Fetch all PollAccount from the blockchain
  */
-export const fetchAllPolls = async (program: anchor.Program): Promise<any[]> => {
+export const fetchAllPolls = async (program: anchor.Program): Promise<IPoll[]> => {
     const connection = program.provider.connection;
     const discriminator = getDiscriminator('PollAccount');
 
-    // Ищем все аккаунты с нужным discriminator
+    // Find all accounts with the correct discriminator
     const accounts = await connection.getProgramAccounts(program.programId, {
         filters: [
             {
@@ -29,36 +31,51 @@ export const fetchAllPolls = async (program: anchor.Program): Promise<any[]> => 
         ],
     });
 
-    console.log(`🔍 Найдено ${accounts.length} аккаунтов PollAccount`);
+    console.log(`🔍 Found ${accounts.length} PollAccount(s)`);
 
-    // Используем coder напрямую
+    // Use coder directly
     const coder = new anchor.BorshAccountsCoder(program.idl);
-    const polls: any[] = [];
+    const polls: IPoll[] = [];
 
     for (const acc of accounts) {
         try {
-            // Поскольку в IDL нет idl.accounts[].type, используем decodeUnchecked
             const decoded = coder.decodeUnchecked('PollAccount', acc.account.data);
-            if (!decoded || !decoded.poll_id) continue;
+            if (!decoded || !decoded.pollId) continue;
+
+            // Format questions
+            const questions: Question[] = decoded.questions.map((q: any) => ({
+                type: q.questionType.one !== undefined ? 'one' : 'many',
+                options: q.options,
+            }));
+
+            // Calculate vault PDA
+            const [vaultPDA] = anchor.web3.PublicKey.findProgramAddressSync(
+                [Buffer.from('vault'), Buffer.from(decoded.pollId)],
+                program.programId
+            );
+
+            // Format date
+            const activeUntilDate = new Date(Number(decoded.activeUntil) * 1000);
 
             polls.push({
-                publicKey: acc.pubkey.toBase58(),
-                pollId: decoded.poll_id,
+                id: decoded.pollId,
                 creator: decoded.creator.toBase58(),
-                rewardToken: decoded.reward_token.toBase58(),
-                rewardAmount: decoded.reward_amount.toString(),
-                totalParticipants: decoded.total_participants,
-                claimedParticipants: decoded.claimed_participants,
+                vault: vaultPDA.toBase58(),
                 topic: decoded.topic,
-                activeUntil: Number(decoded.active_until),
-                questions: decoded.questions,
-                results: decoded.results,
+                reward: Number(decoded.rewardAmount) / 1000000, // Convert from smallest unit
+                totalParticipants: decoded.totalParticipants,
+                claimedParticipants: decoded.claimedParticipants,
+                activeUntil: activeUntilDate.toISOString().split('T')[0],
+                questions,
             });
         } catch (err) {
-            console.warn('⚠️ Ошибка декодирования аккаунта:', err);
+            console.warn('⚠️ Error decoding account:', err);
             continue;
         }
     }
+
+    // Sort by most recent first
+    polls.sort((a, b) => new Date(b.activeUntil).getTime() - new Date(a.activeUntil).getTime());
 
     return polls;
 };
