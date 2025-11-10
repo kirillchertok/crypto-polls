@@ -22,13 +22,41 @@
 a {
     cursor: pointer;
     text-decoration: none;
+    transition: color var(--transition-fast);
 }
 
 html {
     font-size: var(--font-size-base);
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--background-main);
+    color: var(--font-color-primary);
 }
 
 #root {
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
+}
+
+// Custom scrollbar
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-gray-lightest);
+    border-radius: var(--border-radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-gray-light);
+    border-radius: var(--border-radius-sm);
+    
+    &:hover {
+        background: var(--color-gray);
+    }
 }

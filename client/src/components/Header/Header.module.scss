@@ -1,20 +1,63 @@
 .header {
     width: 100%;
     height: 10%;
-    background-color: var(--background-color-gray);
+    background: var(--primary-gradient);
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-xl);
+    box-shadow: var(--shadow-md);
+    position: relative;
+    z-index: 100;
+
+    // Animated gradient effect
+    background-size: 200% 200%;
+    animation: gradientShift 15s ease infinite;
 
     &__name {
         color: var(--font-color-white);
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-xl);
+        letter-spacing: 0.5px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform var(--transition-base);
+        
+        &:hover {
+            transform: scale(1.05);
+        }
     }
 
     &__btns {
         display: flex;
         flex-direction: row;
-        gap: var(--spacing-sm);
+        gap: var(--spacing-md);
+        align-items: center;
+    }
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: var(--spacing-md);
+        
+        &__name {
+            font-size: var(--font-size-md);
+        }
+        
+        &__btns {
+            gap: var(--spacing-sm);
+        }
     }
 }

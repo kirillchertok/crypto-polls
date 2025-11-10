@@ -1,25 +1,158 @@
 .poll {
     width: 100%;
-    height: 100px;
-    border: 2px solid var(--border-color-blue);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-sm);
+    min-height: 140px;
+    background: var(--background-card);
+    border: 1px solid var(--border-color-main);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-sm);
+    gap: var(--spacing-lg);
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    
+    // Accent line
+    &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--primary-gradient);
+        transition: width var(--transition-base);
+    }
+    
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--color-primary-light);
+        
+        &::before {
+            width: 6px;
+        }
+    }
 }
 
 .info {
-    height: 100%;
-    width: 70%;
+    flex: 1;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-
+    gap: var(--spacing-lg);
+    
+    // Left section (topic and reward)
+    > div:first-child {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        flex: 1;
+    }
+    
+    // Right section (creator and date)
+    > div:last-child {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: flex-end;
+        
+        p {
+            font-size: var(--font-size-sm);
+            color: var(--font-color-secondary);
+            
+            span {
+                color: var(--font-color-primary);
+                font-weight: var(--font-weight-md);
+                font-family: 'Courier New', monospace;
+                background: var(--color-gray-lightest);
+                padding: 2px 6px;
+                border-radius: var(--border-radius-sm);
+            }
+        }
+    }
+    
     &--main {
+        font-size: var(--font-size-md);
+        color: var(--font-color-primary);
+        font-weight: var(--font-weight-md);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        
+        // Topic styling
+        &:nth-child(1) {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-lg);
+            color: var(--color-dark);
+        }
+        
+        // Reward styling with badge
+        &:nth-child(2) {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            color: var(--color-primary);
+            font-weight: var(--font-weight-lg);
+            border: 1px solid var(--color-primary-light);
+            
+            &::before {
+                content: '💰';
+                font-size: 1.2em;
+            }
+        }
+    }
+}
+
+// Action button container
+.poll > *:last-child {
+    flex-shrink: 0;
+}
+
+@media (max-width: 968px) {
+    .poll {
+        flex-direction: column;
+        align-items: stretch;
+        min-height: auto;
+        
+        &::before {
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: auto;
+            width: 100%;
+            height: 4px;
+        }
+        
+        &:hover::before {
+            height: 6px;
+            width: 100%;
+        }
+    }
+    
+    .info {
+        flex-direction: column;
+        align-items: stretch;
+        
+        > div:last-child {
+            align-items: flex-start;
+        }
+    }
+}
+
+@media (max-width: 576px) {
+    .poll {
+        padding: var(--spacing-md);
+    }
+    
+    .info--main:nth-child(1) {
         font-size: var(--font-size-md);
     }
 }

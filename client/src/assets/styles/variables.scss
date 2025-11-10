@@ -9,52 +9,102 @@
     --font-weight-xxl: 900;
 
     --font-size-base: 14px;
-    --font-size-sm: 0.8rem;
+    --font-size-sm: 0.875rem;
     --font-size-md: 1rem;
     --font-size-lg: 1.5rem;
     --font-size-xl: 2rem;
+    --font-size-xxl: 2.5rem;
 
-    --border-width-sm: 2px;
-    --border-width-md: 3px;
-    --border-width-lg: 4px;
+    --border-width-sm: 1px;
+    --border-width-md: 2px;
+    --border-width-lg: 3px;
 
-    --border-radius-sm: 3px;
-    --border-radius-md: 6px;
-    --border-radius-lg: 10px;
+    --border-radius-sm: 8px;
+    --border-radius-md: 12px;
+    --border-radius-lg: 16px;
+    --border-radius-xl: 24px;
     --border-radius-circle: 50%;
 
     --spacing-none: 0;
+    --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
     --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-xxl: 3rem;
 
-    --shadow-blur: 15px;
-    --shadow-spread: 0px;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+    --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.2);
+    --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
 
     --box-sizing-base: border-box;
+
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.3s ease;
+    --transition-slow: 0.5s ease;
 }
 
 :root {
-    --font-color-light-gray: rgba(196, 196, 196, 1);
-    --font-color-gray: rgba(128, 128, 128, 1);
-    --font-color-dark-gray: rgba(55, 55, 55, 1);
-    --font-color-purple: rgba(64, 95, 123, 1);
-    --font-color-error: rgba(255, 0, 0, 1);
-    --font-color-black: rgba(0, 0, 0, 1);
-    --font-color-white: rgba(255, 255, 255, 1);
-
-    --border-color-light-gray: rgba(196, 196, 196, 1);
-    --border-color-gray: rgba(128, 128, 128, 1);
-    --border-color-error: rgba(255, 0, 0, 1);
-    --border-color-blue: rgba(94, 123, 199, 1);
-
-    --background-color-white: rgba(255, 255, 255, 1);
-    --background-color-blue: rgba(94, 123, 199, 1);
-    --background-color-dark-blue: rgb(5, 41, 131);
-    --background-color-red: rgba(199, 94, 94, 1);
-    --background-color-gray: rgba(128, 128, 128, 1);
-    --background-color-light-gray: rgba(196, 196, 196, 1);
-
-    --background-color-light-gray-translucent: rgba(196, 196, 196, 0.5);
-    --background-color-light-white-translucent: rgba(255, 255, 255, 0.8);
+    // Modern gradient colors
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --dark-gradient: linear-gradient(135deg, #434343 0%, #000000 100%);
+    --light-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    
+    // Modern solid colors
+    --color-primary: #667eea;
+    --color-primary-dark: #5568d3;
+    --color-primary-light: #8b9aef;
+    
+    --color-secondary: #764ba2;
+    --color-secondary-dark: #613a8a;
+    --color-secondary-light: #916bb8;
+    
+    --color-accent: #f093fb;
+    --color-success: #00f2fe;
+    --color-warning: #fee140;
+    --color-danger: #f5576c;
+    
+    // Neutral colors
+    --color-dark: #1a1a2e;
+    --color-dark-muted: #16213e;
+    --color-gray: #64748b;
+    --color-gray-light: #cbd5e1;
+    --color-gray-lighter: #e2e8f0;
+    --color-gray-lightest: #f1f5f9;
+    --color-white: #ffffff;
+    
+    // Font colors
+    --font-color-primary: var(--color-dark);
+    --font-color-secondary: var(--color-gray);
+    --font-color-light: var(--color-gray-light);
+    --font-color-white: var(--color-white);
+    --font-color-accent: var(--color-primary);
+    
+    // Background colors
+    --background-main: #f8fafc;
+    --background-card: var(--color-white);
+    --background-hover: var(--color-gray-lightest);
+    
+    // Border colors
+    --border-color-main: var(--color-gray-lighter);
+    --border-color-focus: var(--color-primary);
+    --border-color-hover: var(--color-gray-light);
+    
+    // Legacy support (for gradual migration)
+    --background-color-white: var(--color-white);
+    --background-color-blue: var(--color-primary);
+    --background-color-dark-blue: var(--color-primary-dark);
+    --background-color-red: var(--color-danger);
+    --background-color-gray: var(--color-gray);
+    --background-color-light-gray: var(--color-gray-light);
+    --border-color-blue: var(--color-primary);
+    --border-color-gray: var(--color-gray-light);
+    --border-color-light-gray: var(--color-gray-lighter);
+    --font-color-gray: var(--color-gray);
+    --font-color-purple: var(--color-primary);
 }

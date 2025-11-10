@@ -2,4 +2,91 @@
     width: 100%;
     height: 90%;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+        background: var(--color-gray-light);
+        border-radius: var(--border-radius-sm);
+        
+        &:hover {
+            background: var(--color-gray);
+        }
+    }
+}
+
+.header {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-xl);
+    color: var(--color-dark);
+    margin-bottom: var(--spacing-lg);
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.pollCard {
+    background: var(--background-card);
+    border: 1px solid var(--border-color-main);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    position: relative;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--primary-gradient);
+        border-radius: var(--border-radius-lg) 0 0 var(--border-radius-lg);
+    }
+    
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--color-primary-light);
+    }
+}
+
+.noPollsMessage {
+    text-align: center;
+    padding: var(--spacing-xxl);
+    color: var(--font-color-secondary);
+    font-size: var(--font-size-lg);
+    background: var(--background-card);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    
+    &::before {
+        content: '📋';
+        display: block;
+        font-size: 4rem;
+        margin-bottom: var(--spacing-md);
+    }
+}
+
+@media (max-width: 768px) {
+    .polls {
+        padding: var(--spacing-md);
+        gap: var(--spacing-md);
+    }
+    
+    .header {
+        font-size: var(--font-size-lg);
+    }
 }
