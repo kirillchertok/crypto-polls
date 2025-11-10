@@ -46,13 +46,25 @@ export const fetchPollResults = async (
             return [];
         }
 
-        // Format results
-        const results: PollResult[] = decoded.results.map((result: any) => {
-            const answers = result.answers.map((answer: any) => {
+        // Format results with validation
+        const results: PollResult[] = decoded.results.map((result: any, index: number) => {
+            console.log(`Processing result ${index + 1}:`, {
+                user: result.user.toBase58(),
+                answersCount: result.answers.length,
+                timestamp: result.timestamp,
+                claimed: result.claimed
+            });
+            
+            const answers = result.answers.map((answer: any, answerIndex: number) => {
                 if (answer.single !== undefined) {
+                    console.log(`  Answer ${answerIndex + 1}: Single - "${answer.single}"`);
                     return { type: 'Single' as const, value: answer.single };
-                } else {
+                } else if (answer.multiple !== undefined) {
+                    console.log(`  Answer ${answerIndex + 1}: Multiple - [${answer.multiple.join(', ')}]`);
                     return { type: 'Multiple' as const, value: answer.multiple };
+                } else {
+                    console.error(`  Answer ${answerIndex + 1}: Invalid format`, answer);
+                    return { type: 'Single' as const, value: 'Invalid answer' };
                 }
             });
 
@@ -64,7 +76,13 @@ export const fetchPollResults = async (
             };
         });
 
-        console.log(`🔍 Found ${results.length} result(s) for poll ${pollId}`);
+        console.log(`✅ Successfully formatted ${results.length} result(s) for poll ${pollId}`);
+        console.log('Results summary:', results.map(r => ({
+            user: `${r.user.slice(0, 4)}...${r.user.slice(-4)}`,
+            answers: r.answers.length,
+            claimed: r.claimed
+        })));
+        
         return results;
     } catch (err) {
         console.error('Error fetching poll results:', err);
