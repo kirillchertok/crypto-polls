@@ -1,9 +1,11 @@
+import { useAnchorWallet } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import $api from '@/api';
 import { useAppSelectore } from '@/store/hooks';
 import type { IPoll } from '@/types/IPoll';
+import { getAnchorClient } from '@/utils/solana/anchorClient';
+import { fetchPollResults } from '@/utils/solana/fetchPollResults';
 
 import { Button } from '../ui/Button/Button';
 import styles from './Poll.module.scss';
@@ -14,22 +16,35 @@ interface PollProps {
 
 export const Poll = ({ poll }: PollProps) => {
     const { wallet } = useAppSelectore(state => state.crypto);
+    const anchorWallet = useAnchorWallet();
     const [hasTaken, setHasTaken] = useState<boolean>(false);
+    const [checking, setChecking] = useState<boolean>(true);
 
     useEffect(() => {
         const check = async () => {
+            if (!wallet || !anchorWallet) {
+                setChecking(false);
+                return;
+            }
+
             try {
-                const response = await $api.get(`/results/check/${poll.id}/${wallet}`);
-                setHasTaken(response.data.hasTaken);
+                setChecking(true);
+                const { program } = getAnchorClient(anchorWallet);
+                const results = await fetchPollResults(program, poll.id);
+                
+                // Check if current user has already participated
+                const userResult = results.find(r => r.user === wallet);
+                setHasTaken(!!userResult);
             } catch (e) {
-                console.log(e);
+                console.log('Error checking participation:', e);
+                setHasTaken(false);
+            } finally {
+                setChecking(false);
             }
         };
 
-        if (wallet && poll) {
-            check();
-        }
-    }, [wallet, poll]);
+        check();
+    }, [wallet, poll.id, anchorWallet]);
     return (
         <>
             <div className={styles.poll}>
@@ -52,26 +67,18 @@ export const Poll = ({ poll }: PollProps) => {
                         </p>
                     </div>
                 </div>
-                {wallet ? (
+                {checking ? (
+                    <Button size='medium'>Checking...</Button>
+                ) : wallet ? (
                     hasTaken ? (
-                        <Button
-                            size='medium'
-                            disabled
-                        >
-                            You have already participated
-                        </Button>
+                        <Button size='medium'>Already participated</Button>
                     ) : (
                         <Link to={`/passage/${poll.id}`}>
                             <Button size='medium'>Take part</Button>
                         </Link>
                     )
                 ) : (
-                    <Button
-                        size='medium'
-                        disabled
-                    >
-                        Connect your wallet first
-                    </Button>
+                    <Button size='medium'>Connect wallet first</Button>
                 )}
             </div>
         </>
