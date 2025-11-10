@@ -1,10 +1,8 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 
-import { TOKEN_DECIMAL } from '@/constants/token';
-
 interface checkVaultBalanceProps {
     vaultAddress: string;
-    requiredAmount: number;
+    requiredAmount: number; // Already in UI amount (decimal-adjusted)
 }
 
 export const checkVaultBalance = async ({
@@ -24,7 +22,8 @@ export const checkVaultBalance = async ({
         try {
             const vaultAccountInfo = await connection.getTokenAccountBalance(vaultPublicKey);
             const currentBalance = vaultAccountInfo.value.uiAmount || 0;
-            return currentBalance >= requiredAmount / TOKEN_DECIMAL;
+            // Both values are already in UI amount, so compare directly
+            return currentBalance >= requiredAmount;
         } catch (error) {
             return false;
         }

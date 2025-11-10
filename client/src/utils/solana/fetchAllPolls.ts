@@ -2,7 +2,8 @@ import * as anchor from '@coral-xyz/anchor';
 
 import type { IPoll, Question } from '@/types/IPoll';
 
-const TOKEN_DECIMAL = 1_000_000;
+// Standard SPL tokens use 9 decimals (like SOL)
+const TOKEN_DECIMAL = 1_000_000_000;
 
 /**
  * Fetch all PollAccount from the blockchain using Anchor's built-in methods
