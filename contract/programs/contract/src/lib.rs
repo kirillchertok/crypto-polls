@@ -8,17 +8,10 @@ const MAX_QUESTIONS: usize = 10;
 const MAX_OPTIONS: usize = 10;
 const MAX_OPTION_LEN: usize = 100;
 const MAX_TOPIC_LEN: usize = 200;
-const MAX_RESULTS: usize = 1000;
 
 #[program]
 pub mod contract {
     use super::*;
-
-    pub fn initialize_registry(ctx: Context<InitializeRegistry>) -> Result<()> {
-        let registry = &mut ctx.accounts.registry;
-        registry.bump = ctx.bumps.registry;
-        Ok(())
-    }
 
     pub fn create_poll(
         ctx: Context<CreatePoll>,
@@ -55,6 +48,10 @@ pub mod contract {
         poll_account.results = Vec::new();
 
         // Transfer tokens to vault
+        let total_amount = reward_amount
+            .checked_mul(total_participants as u64)
+            .ok_or(ErrorCode::CalculationOverflow)?;
+
         let cpi_accounts = Transfer {
             from: ctx.accounts.creator_token_account.to_account_info(),
             to: ctx.accounts.poll_vault.to_account_info(),
@@ -62,10 +59,6 @@ pub mod contract {
         };
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-        
-        let total_amount = reward_amount
-            .checked_mul(total_participants as u64)
-            .ok_or(ErrorCode::CalculationOverflow)?;
         
         token::transfer(cpi_ctx, total_amount)?;
 
@@ -100,7 +93,7 @@ pub mod contract {
         // Validate answers match questions
         require!(
             answers.len() == poll_account.questions.len(),
-            ErrorCode::InvalidPollId
+            ErrorCode::InvalidAnswers
         );
 
         // Store the result
@@ -126,15 +119,15 @@ pub mod contract {
 
         require!(poll_account.poll_id == poll_id, ErrorCode::InvalidPollId);
 
-        // Find user's result
-        let user_result = poll_account
+        // Find user's result index first
+        let user_result_index = poll_account
             .results
-            .iter_mut()
-            .find(|r| r.user == user)
+            .iter()
+            .position(|r| r.user == user)
             .ok_or(ErrorCode::NoResultsFound)?;
 
-        // Check if already claimed
-        require!(!user_result.claimed, ErrorCode::AlreadyClaimed);
+        // Check if already claimed (accessing by index avoids borrow issues)
+        require!(!poll_account.results[user_result_index].claimed, ErrorCode::AlreadyClaimed);
 
         // Check if there are rewards available
         require!(
@@ -142,26 +135,29 @@ pub mod contract {
             ErrorCode::AllRewardsClaimed
         );
 
-        let poll_account_info = poll_account.to_account_info();
-        let seeds = &[b"poll", poll_id.as_bytes(), &[poll_account.bump]];
-        let signer = &[&seeds[..]];
+        // Get the values we need before the CPI call
+        let reward_amount = poll_account.reward_amount;
+        let bump = poll_account.bump;
 
         // Transfer reward to user
+        let seeds = &[b"poll", poll_id.as_bytes(), &[bump]];
+        let signer = &[&seeds[..]];
+
         let cpi_accounts = Transfer {
             from: ctx.accounts.poll_vault.to_account_info(),
             to: ctx.accounts.user_token_account.to_account_info(),
-            authority: poll_account_info,
+            authority: poll_account.to_account_info(),
         };
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
 
-        token::transfer(cpi_ctx, poll_account.reward_amount)?;
+        token::transfer(cpi_ctx, reward_amount)?;
 
-        // Mark as claimed
-        user_result.claimed = true;
+        // Now update the state
+        poll_account.results[user_result_index].claimed = true;
         poll_account.claimed_participants += 1;
 
-        msg!("Reward of {} claimed by user {}", poll_account.reward_amount, user);
+        msg!("Reward of {} claimed by user {}", reward_amount, user);
         Ok(())
     }
 
@@ -174,33 +170,25 @@ pub mod contract {
             ErrorCode::Unauthorized
         );
 
-        let poll_account_info = poll_account.to_account_info();
-        let seeds = &[b"poll", poll_id.as_bytes(), &[poll_account.bump]];
+        // Get values before CPI
+        let bump = poll_account.bump;
+        let vault_amount = ctx.accounts.poll_vault.amount;
+
+        let seeds = &[b"poll", poll_id.as_bytes(), &[bump]];
         let signer = &[&seeds[..]];
 
         let cpi_accounts = Transfer {
             from: ctx.accounts.poll_vault.to_account_info(),
             to: ctx.accounts.creator_token_account.to_account_info(),
-            authority: poll_account_info,
+            authority: poll_account.to_account_info(),
         };
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
 
-        token::transfer(cpi_ctx, ctx.accounts.poll_vault.amount)?;
-        msg!("Refunded tokens to creator");
+        token::transfer(cpi_ctx, vault_amount)?;
+        msg!("Refunded {} tokens to creator", vault_amount);
         Ok(())
     }
-}
-
-#[derive(Accounts)]
-pub struct InitializeRegistry<'info> {
-    #[account(mut)]
-    pub initializer: Signer<'info>,
-
-    #[account(init, payer = initializer, space = 8 + 8, seeds = [b"registry"], bump)]
-    pub registry: Account<'info, PollRegistry>,
-
-    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -217,9 +205,6 @@ pub struct CreatePoll<'info> {
         bump
     )]
     pub poll_account: Account<'info, PollAccount>,
-
-    #[account(mut)]
-    pub registry: Account<'info, PollRegistry>,
 
     pub reward_token: Account<'info, anchor_spl::token::Mint>,
 
@@ -290,22 +275,17 @@ pub struct RefundPoll<'info> {
 
 #[account]
 pub struct PollAccount {
-    pub poll_id: String,          // 4 + max_len
-    pub creator: Pubkey,           // 32
-    pub reward_token: Pubkey,      // 32
-    pub reward_amount: u64,        // 8
-    pub total_participants: u32,   // 4
-    pub claimed_participants: u32, // 4
-    pub bump: u8,                  // 1
-    pub topic: String,             // 4 + max_len
-    pub active_until: i64,         // 8
-    pub questions: Vec<Question>,  // 4 + (variable)
-    pub results: Vec<UserResult>,  // 4 + (variable)
-}
-
-#[account]
-pub struct PollRegistry {
+    pub poll_id: String,
+    pub creator: Pubkey,
+    pub reward_token: Pubkey,
+    pub reward_amount: u64,
+    pub total_participants: u32,
+    pub claimed_participants: u32,
     pub bump: u8,
+    pub topic: String,
+    pub active_until: i64,
+    pub questions: Vec<Question>,
+    pub results: Vec<UserResult>,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -316,8 +296,8 @@ pub struct Question {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
 pub enum QuestionType {
-    One,  // Single choice
-    Many, // Multiple choice
+    One,
+    Many,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -334,31 +314,27 @@ pub enum UserAnswer {
     Multiple(Vec<String>),
 }
 
-// Helper function to calculate poll account size
 fn calculate_poll_account_size(poll_id: &str, topic: &str, questions: &[Question]) -> usize {
     let base_size = 8 + // discriminator
-        4 + poll_id.len() + // poll_id
+        4 + poll_id.len() +
         32 + // creator
         32 + // reward_token
         8 + // reward_amount
         4 + // total_participants
         4 + // claimed_participants
         1 + // bump
-        4 + topic.len() + // topic
+        4 + topic.len() +
         8 + // active_until
         4; // questions vec length
 
     let questions_size: usize = questions
         .iter()
         .map(|q| {
-            1 + // enum discriminator for question_type
-            4 + // options vec length
-            q.options.iter().map(|opt| 4 + opt.len()).sum::<usize>()
+            1 + 4 + q.options.iter().map(|opt| 4 + opt.len()).sum::<usize>()
         })
         .sum();
 
-    // Reserve space for results (estimate based on max expected size)
-    let results_reserve = 4 + (MAX_RESULTS * 200); // Rough estimate per result
+    let results_reserve = 4 + (1000 * 200);
 
     base_size + questions_size + results_reserve
 }
@@ -383,8 +359,6 @@ pub enum ErrorCode {
     NoResultsFound,
     #[msg("Reward already claimed")]
     AlreadyClaimed,
-    #[msg("Account size estimate exceeded allowed space")]
-    AccountTooLarge,
     #[msg("Too many questions (exceeds max)")]
     TooManyQuestions,
     #[msg("Too many options in a question (exceeds max)")]
@@ -395,4 +369,6 @@ pub enum ErrorCode {
     TopicTooLong,
     #[msg("All results already recorded (no more submissions allowed)")]
     AllResultsRecorded,
+    #[msg("Invalid answers provided")]
+    InvalidAnswers,
 }

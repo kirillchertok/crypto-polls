@@ -1,23 +1,40 @@
 import * as anchor from '@coral-xyz/anchor';
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import type { AnchorWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
-import { v4 } from 'uuid';
+import { PublicKey, SystemProgram } from '@solana/web3.js';
 
 import { REWARD_TOKEN_MINT, TOKEN_DECIMAL } from '@/constants/token';
+import type { Question } from '@/types/IPoll';
 
 import { getAnchorClient } from './anchorClient';
 
-interface createPollAnchorProps {
-    total: number;
-    passages: number;
+export interface CreatePollParams {
+    topic: string;
+    rewardPerUser: number; // in tokens
+    totalParticipants: number;
+    activeUntil: string;
+    questions: Question[];
     walletFull: AnchorWallet;
 }
 
-export const createPollAnchor = async ({ total, passages, walletFull }: createPollAnchorProps) => {
-    const pollId = v4().replace(/-/g, '').slice(0, 32);
-    const rewardPerUser = Math.floor((total * TOKEN_DECIMAL) / passages);
-    const totalParticipants = passages;
+export const createPollAnchor = async ({
+    topic,
+    rewardPerUser,
+    totalParticipants,
+    activeUntil,
+    questions,
+    walletFull,
+}: CreatePollParams) => {
+    // Generate a unique poll ID
+    const pollId = `poll_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Convert reward to smallest unit (with decimals)
+    const rewardAmount = new anchor.BN(rewardPerUser * TOKEN_DECIMAL);
+    
+    // Convert date to Unix timestamp
+    const activeUntilTimestamp = new anchor.BN(
+        Math.floor(new Date(activeUntil).getTime() / 1000)
+    );
 
     const { program } = getAnchorClient(walletFull);
 
@@ -31,23 +48,46 @@ export const createPollAnchor = async ({ total, passages, walletFull }: createPo
         program.programId
     );
 
+    const rewardTokenMint = new PublicKey(REWARD_TOKEN_MINT);
     const creatorTokenAccount = await getAssociatedTokenAddress(
-        REWARD_TOKEN_MINT,
+        rewardTokenMint,
         walletFull.publicKey
     );
 
-    await program.methods
-        .createPoll(pollId, new anchor.BN(rewardPerUser), totalParticipants)
+    // Format questions for the contract
+    const formattedQuestions = questions.map(q => ({
+        questionType: q.type === 'one' ? { one: {} } : { many: {} },
+        options: q.options,
+    }));
+
+    const tx = await program.methods
+        .createPoll(
+            pollId,
+            rewardAmount,
+            totalParticipants,
+            topic,
+            activeUntilTimestamp,
+            formattedQuestions
+        )
         .accounts({
             creator: walletFull.publicKey,
             pollAccount: pollAccountPDA,
-            rewardToken: REWARD_TOKEN_MINT,
+            rewardToken: rewardTokenMint,
             creatorTokenAccount,
             pollVault: pollVaultPDA,
-            systemProgram: anchor.web3.SystemProgram.programId,
+            systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
         })
         .rpc();
 
-    return { pollId, rewardPerUser, pollVaultPDA, totalParticipants };
+    console.log('Poll created successfully. Transaction:', tx);
+
+    return {
+        pollId,
+        rewardAmount: rewardAmount.toNumber(),
+        pollVaultPDA,
+        totalParticipants,
+        pollAccountPDA,
+        tx,
+    };
 };
