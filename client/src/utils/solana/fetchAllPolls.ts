@@ -1,81 +1,103 @@
 import * as anchor from '@coral-xyz/anchor';
-import { sha256 } from '@noble/hashes/sha256';
 
 import type { IPoll, Question } from '@/types/IPoll';
 
-/**
- * Generate discriminator for account type (8 bytes)
- */
-function getDiscriminator(name: string): Buffer {
-    const preimage = `account:${name}`;
-    const hash = sha256(new TextEncoder().encode(preimage));
-    return Buffer.from(hash).slice(0, 8);
-}
+const TOKEN_DECIMAL = 1_000_000;
 
 /**
- * Fetch all PollAccount from the blockchain
+ * Fetch all PollAccount from the blockchain using Anchor's built-in methods
  */
 export const fetchAllPolls = async (program: anchor.Program): Promise<IPoll[]> => {
-    const connection = program.provider.connection;
-    const discriminator = getDiscriminator('PollAccount');
+    try {
+        console.log('🔍 Fetching all polls from program:', program.programId.toBase58());
 
-    // Find all accounts with the correct discriminator
-    const accounts = await connection.getProgramAccounts(program.programId, {
-        filters: [
-            {
-                memcmp: {
-                    offset: 0,
-                    bytes: anchor.utils.bytes.bs58.encode(discriminator),
-                },
-            },
-        ],
-    });
+        // Use Anchor's built-in method to fetch all PollAccount accounts
+        const pollAccounts = await program.account.pollAccount.all();
+        
+        console.log(`✅ Found ${pollAccounts.length} poll account(s) on blockchain`);
 
-    console.log(`🔍 Found ${accounts.length} PollAccount(s)`);
-
-    // Use coder directly
-    const coder = new anchor.BorshAccountsCoder(program.idl);
-    const polls: IPoll[] = [];
-
-    for (const acc of accounts) {
-        try {
-            const decoded = coder.decodeUnchecked('PollAccount', acc.account.data);
-            if (!decoded || !decoded.pollId) continue;
-
-            // Format questions
-            const questions: Question[] = decoded.questions.map((q: any) => ({
-                type: q.questionType.one !== undefined ? 'one' : 'many',
-                options: q.options,
-            }));
-
-            // Calculate vault PDA
-            const [vaultPDA] = anchor.web3.PublicKey.findProgramAddressSync(
-                [Buffer.from('vault'), Buffer.from(decoded.pollId)],
-                program.programId
-            );
-
-            // Format date
-            const activeUntilDate = new Date(Number(decoded.activeUntil) * 1000);
-
-            polls.push({
-                id: decoded.pollId,
-                creator: decoded.creator.toBase58(),
-                vault: vaultPDA.toBase58(),
-                topic: decoded.topic,
-                reward: Number(decoded.rewardAmount) / 1000000, // Convert from smallest unit
-                totalParticipants: decoded.totalParticipants,
-                claimedParticipants: decoded.claimedParticipants,
-                activeUntil: activeUntilDate.toISOString().split('T')[0],
-                questions,
-            });
-        } catch (err) {
-            console.warn('⚠️ Error decoding account:', err);
-            continue;
+        if (pollAccounts.length === 0) {
+            console.warn('⚠️ No poll accounts found. Make sure polls have been created and deployed correctly.');
+            return [];
         }
+
+        const polls: IPoll[] = [];
+
+        for (const accountInfo of pollAccounts) {
+            try {
+                const data = accountInfo.account as any;
+                
+                console.log('📊 Processing poll:', {
+                    pollId: data.pollId,
+                    creator: data.creator.toBase58(),
+                    topic: data.topic,
+                    rewardAmount: data.rewardAmount.toString(),
+                    activeUntil: new Date(Number(data.activeUntil) * 1000).toISOString(),
+                });
+
+                // Format questions with better type checking
+                const questions: Question[] = data.questions.map((q: any) => {
+                    // Check the structure of questionType enum
+                    const type = q.questionType.one !== undefined || 
+                                Object.keys(q.questionType)[0] === 'one' ? 'one' : 'many';
+                    
+                    return {
+                        type,
+                        options: q.options,
+                    };
+                });
+
+                // Calculate vault PDA
+                const [vaultPDA] = anchor.web3.PublicKey.findProgramAddressSync(
+                    [Buffer.from('vault'), Buffer.from(data.pollId)],
+                    program.programId
+                );
+
+                // Format date
+                const activeUntilDate = new Date(Number(data.activeUntil) * 1000);
+                const formattedDate = activeUntilDate.toISOString().split('T')[0];
+
+                const poll: IPoll = {
+                    id: data.pollId,
+                    creator: data.creator.toBase58(),
+                    vault: vaultPDA.toBase58(),
+                    topic: data.topic,
+                    reward: Number(data.rewardAmount.toString()) / TOKEN_DECIMAL,
+                    totalParticipants: data.totalParticipants,
+                    claimedParticipants: data.claimedParticipants,
+                    activeUntil: formattedDate,
+                    questions,
+                };
+
+                console.log('✅ Poll processed successfully:', {
+                    id: poll.id,
+                    reward: poll.reward,
+                    activeUntil: poll.activeUntil,
+                });
+
+                polls.push(poll);
+            } catch (err) {
+                console.error('❌ Error processing poll account:', err);
+                console.error('Account data:', accountInfo.account);
+                // Continue processing other polls
+            }
+        }
+
+        // Sort by most recent first
+        polls.sort((a, b) => new Date(b.activeUntil).getTime() - new Date(a.activeUntil).getTime());
+
+        console.log(`✅ Successfully processed ${polls.length} poll(s)`);
+        return polls;
+    } catch (error) {
+        console.error('❌ Fatal error fetching polls:', error);
+        
+        // Provide helpful debugging info
+        if (error instanceof Error) {
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+        }
+        
+        // Return empty array instead of throwing to allow UI to display properly
+        return [];
     }
-
-    // Sort by most recent first
-    polls.sort((a, b) => new Date(b.activeUntil).getTime() - new Date(a.activeUntil).getTime());
-
-    return polls;
 };

@@ -18,7 +18,7 @@ export const Polls = () => {
     const anchorWallet = useAnchorWallet();
 
     // Check if poll has sufficient balance in vault
-    const checkVaultBalance = async (vaultAddress: string, requiredAmount: number): Promise<boolean> => {
+    const checkVaultBalance = async (vaultAddress: string, requiredAmountUI: number): Promise<boolean> => {
         if (!anchorWallet) return false;
 
         try {
@@ -28,10 +28,18 @@ export const Polls = () => {
             const vaultAccountInfo = await provider.connection.getTokenAccountBalance(vaultPublicKey);
             const currentBalance = vaultAccountInfo.value.uiAmount || 0;
 
-            return currentBalance >= requiredAmount;
+            console.log('💰 Vault balance check:', {
+                vault: vaultAddress,
+                currentBalance,
+                requiredAmount: requiredAmountUI,
+                hasSufficientFunds: currentBalance >= requiredAmountUI,
+            });
+
+            return currentBalance >= requiredAmountUI;
         } catch (error) {
-            console.error('Error checking vault balance:', error);
-            return false;
+            console.error('❌ Error checking vault balance:', error);
+            // Return true to not filter out the poll - let the smart contract handle it
+            return true;
         }
     };
 
