@@ -11,7 +11,8 @@ export interface IPoll {
     vault: string;
     topic: string;
     reward: number;
-    createdAt: string;
-    activeUntill: string;
+    totalParticipants: number;
+    claimedParticipants: number;
+    activeUntil: string;
     questions: Question[];
 }

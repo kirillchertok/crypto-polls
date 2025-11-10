@@ -48,10 +48,7 @@ export const Poll = ({ poll }: PollProps) => {
                             </span>
                         </p>
                         <p>
-                            Created at: <span>{poll.createdAt}</span>
-                        </p>
-                        <p>
-                            Active until: <span>{poll.activeUntill}</span>
+                            Active until: <span>{poll.activeUntil}</span>
                         </p>
                     </div>
                 </div>

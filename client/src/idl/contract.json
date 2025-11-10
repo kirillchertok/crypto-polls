@@ -90,6 +90,10 @@
                     }
                 },
                 {
+                    "name": "registry",
+                    "writable": true
+                },
+                {
                     "name": "reward_token"
                 },
                 {
@@ -133,8 +137,54 @@
                 {
                     "name": "total_participants",
                     "type": "u32"
+                },
+                {
+                    "name": "topic",
+                    "type": "string"
+                },
+                {
+                    "name": "active_until",
+                    "type": "i64"
+                },
+                {
+                    "name": "questions",
+                    "type": {
+                        "vec": {
+                            "defined": {
+                                "name": "Question"
+                            }
+                        }
+                    }
                 }
             ]
+        },
+        {
+            "name": "initialize_registry",
+            "discriminator": [189, 181, 20, 17, 174, 57, 249, 59],
+            "accounts": [
+                {
+                    "name": "initializer",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "registry",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [114, 101, 103, 105, 115, 116, 114, 121]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                }
+            ],
+            "args": []
         },
         {
             "name": "refund_poll",
@@ -192,12 +242,59 @@
                     "type": "string"
                 }
             ]
+        },
+        {
+            "name": "submit_poll_results",
+            "discriminator": [114, 144, 11, 37, 109, 217, 31, 204],
+            "accounts": [
+                {
+                    "name": "user",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "poll_account",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [112, 111, 108, 108]
+                            },
+                            {
+                                "kind": "arg",
+                                "path": "poll_id"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "args": [
+                {
+                    "name": "poll_id",
+                    "type": "string"
+                },
+                {
+                    "name": "answers",
+                    "type": {
+                        "vec": {
+                            "defined": {
+                                "name": "UserAnswer"
+                            }
+                        }
+                    }
+                }
+            ]
         }
     ],
     "accounts": [
         {
             "name": "PollAccount",
             "discriminator": [109, 254, 117, 41, 232, 74, 172, 45]
+        },
+        {
+            "name": "PollRegistry",
+            "discriminator": [12, 222, 3, 215, 214, 29, 138, 168]
         }
     ],
     "errors": [
@@ -225,11 +322,62 @@
             "code": 6004,
             "name": "CalculationOverflow",
             "msg": "Calculation overflow"
+        },
+        {
+            "code": 6005,
+            "name": "PollExpired",
+            "msg": "Poll has expired"
+        },
+        {
+            "code": 6006,
+            "name": "AlreadyParticipated",
+            "msg": "User already participated in this poll"
+        },
+        {
+            "code": 6007,
+            "name": "NoResultsFound",
+            "msg": "No results found for user"
+        },
+        {
+            "code": 6008,
+            "name": "AlreadyClaimed",
+            "msg": "Reward already claimed"
+        },
+        {
+            "code": 6009,
+            "name": "AccountTooLarge",
+            "msg": "Account size estimate exceeded allowed space"
+        },
+        {
+            "code": 6010,
+            "name": "TooManyQuestions",
+            "msg": "Too many questions (exceeds max)"
+        },
+        {
+            "code": 6011,
+            "name": "TooManyOptions",
+            "msg": "Too many options in a question (exceeds max)"
+        },
+        {
+            "code": 6012,
+            "name": "OptionStringTooLong",
+            "msg": "Option string length too long"
+        },
+        {
+            "code": 6013,
+            "name": "TopicTooLong",
+            "msg": "Topic string too long"
+        },
+        {
+            "code": 6014,
+            "name": "AllResultsRecorded",
+            "msg": "All results already recorded (no more submissions allowed)"
         }
     ],
     "types": [
         {
             "name": "PollAccount",
+            "docs": ["========== DATA STRUCTURES =========="],
             "type": {
                 "kind": "struct",
                 "fields": [
@@ -260,9 +408,136 @@
                     {
                         "name": "bump",
                         "type": "u8"
+                    },
+                    {
+                        "name": "topic",
+                        "type": "string"
+                    },
+                    {
+                        "name": "active_until",
+                        "type": "i64"
+                    },
+                    {
+                        "name": "questions",
+                        "type": {
+                            "vec": {
+                                "defined": {
+                                    "name": "Question"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "results",
+                        "type": {
+                            "vec": {
+                                "defined": {
+                                    "name": "UserResult"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "PollRegistry",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "bump",
+                        "type": "u8"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Question",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "question_type",
+                        "type": {
+                            "defined": {
+                                "name": "QuestionType"
+                            }
+                        }
+                    },
+                    {
+                        "name": "options",
+                        "type": {
+                            "vec": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "QuestionType",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "One"
+                    },
+                    {
+                        "name": "Many"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UserAnswer",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    {
+                        "name": "Single",
+                        "fields": ["string"]
+                    },
+                    {
+                        "name": "Multiple",
+                        "fields": [
+                            {
+                                "vec": "string"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "name": "UserResult",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "user",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "answers",
+                        "type": {
+                            "vec": {
+                                "defined": {
+                                    "name": "UserAnswer"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "timestamp",
+                        "type": "i64"
+                    },
+                    {
+                        "name": "claimed",
+                        "type": "bool"
                     }
                 ]
             }
         }
     ]
 }
+
