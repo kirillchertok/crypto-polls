@@ -120,11 +120,14 @@ export const PollPassage = ({ id }: PollPassageProps) => {
     };
 
     const handleMultiSelect = (option: string) => {
-        const currentAnswers = (userAnswers[currentQuestionIndex] as string[]) || [];
+        const currentAnswers = Array.isArray(userAnswers[currentQuestionIndex]) 
+            ? (userAnswers[currentQuestionIndex] as string[])
+            : [];
         const newAnswers = [...userAnswers];
 
         if (currentAnswers.includes(option)) {
-            newAnswers[currentQuestionIndex] = currentAnswers.filter(item => item !== option);
+            const filtered = currentAnswers.filter(item => item !== option);
+            newAnswers[currentQuestionIndex] = filtered.length > 0 ? filtered : [];
         } else {
             newAnswers[currentQuestionIndex] = [...currentAnswers, option];
         }

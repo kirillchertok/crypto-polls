@@ -28,13 +28,29 @@ export const submitPollResults = async ({
     );
 
     // Convert answers to the format expected by the contract
-    const formattedAnswers = answers.map(answer => {
+    const formattedAnswers = answers.map((answer, index) => {
         if (answer.type === 'Single') {
-            return { single: answer.value as string };
+            // Ensure value is a string
+            const value = typeof answer.value === 'string' ? answer.value : String(answer.value);
+            console.log(`Answer ${index} (Single):`, value);
+            return { single: value };
         } else {
-            return { multiple: answer.value as string[] };
+            // Ensure value is an array of strings
+            let value: string[];
+            if (Array.isArray(answer.value)) {
+                value = answer.value.filter(v => v != null && v !== '');
+            } else if (typeof answer.value === 'string') {
+                value = [answer.value];
+            } else {
+                console.error('Invalid multiple choice answer:', answer.value);
+                value = [];
+            }
+            console.log(`Answer ${index} (Multiple):`, value);
+            return { multiple: value };
         }
     });
+    
+    console.log('Final formatted answers:', JSON.stringify(formattedAnswers, null, 2));
 
     const tx = await program.methods
         .submitPollResults(pollId, formattedAnswers)
