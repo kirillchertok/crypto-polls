@@ -1,543 +1,578 @@
 {
-    "address": "FDVeBn4zL2WjX8jPBWoja4z4UUjFixKbYxpgCExx2DeE",
-    "metadata": {
-        "name": "contract",
-        "version": "0.1.0",
-        "spec": "0.1.0",
-        "description": "Created with Anchor"
+  "address": "FDVeBn4zL2WjX8jPBWoja4z4UUjFixKbYxpgCExx2DeE",
+  "metadata": {
+    "name": "contract",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "claim_reward",
+      "discriminator": [
+        149,
+        95,
+        181,
+        242,
+        94,
+        90,
+        158,
+        162
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "poll_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  108,
+                  108
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "poll_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "poll_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "poll_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "poll_id",
+          "type": "string"
+        }
+      ]
     },
-    "instructions": [
+    {
+      "name": "create_poll",
+      "discriminator": [
+        182,
+        171,
+        112,
+        238,
+        6,
+        219,
+        14,
+        110
+      ],
+      "accounts": [
         {
-            "name": "claim_reward",
-            "discriminator": [149, 95, 181, 242, 94, 90, 158, 162],
-            "accounts": [
-                {
-                    "name": "user",
-                    "writable": true,
-                    "signer": true
-                },
-                {
-                    "name": "poll_account",
-                    "writable": true,
-                    "pda": {
-                        "seeds": [
-                            {
-                                "kind": "const",
-                                "value": [112, 111, 108, 108]
-                            },
-                            {
-                                "kind": "arg",
-                                "path": "poll_id"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "name": "poll_vault",
-                    "writable": true,
-                    "pda": {
-                        "seeds": [
-                            {
-                                "kind": "const",
-                                "value": [118, 97, 117, 108, 116]
-                            },
-                            {
-                                "kind": "arg",
-                                "path": "poll_id"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "name": "user_token_account",
-                    "writable": true
-                },
-                {
-                    "name": "token_program",
-                    "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-                }
-            ],
-            "args": [
-                {
-                    "name": "poll_id",
-                    "type": "string"
-                }
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "poll_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  108,
+                  108
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "poll_id"
+              }
             ]
+          }
         },
         {
-            "name": "create_poll",
-            "discriminator": [182, 171, 112, 238, 6, 219, 14, 110],
-            "accounts": [
-                {
-                    "name": "creator",
-                    "writable": true,
-                    "signer": true
-                },
-                {
-                    "name": "poll_account",
-                    "writable": true,
-                    "pda": {
-                        "seeds": [
-                            {
-                                "kind": "const",
-                                "value": [112, 111, 108, 108]
-                            },
-                            {
-                                "kind": "arg",
-                                "path": "poll_id"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "name": "registry",
-                    "writable": true
-                },
-                {
-                    "name": "reward_token"
-                },
-                {
-                    "name": "creator_token_account",
-                    "writable": true
-                },
-                {
-                    "name": "poll_vault",
-                    "writable": true,
-                    "pda": {
-                        "seeds": [
-                            {
-                                "kind": "const",
-                                "value": [118, 97, 117, 108, 116]
-                            },
-                            {
-                                "kind": "arg",
-                                "path": "poll_id"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "name": "system_program",
-                    "address": "11111111111111111111111111111111"
-                },
-                {
-                    "name": "token_program",
-                    "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-                }
-            ],
-            "args": [
-                {
-                    "name": "poll_id",
-                    "type": "string"
-                },
-                {
-                    "name": "reward_amount",
-                    "type": "u64"
-                },
-                {
-                    "name": "total_participants",
-                    "type": "u32"
-                },
-                {
-                    "name": "topic",
-                    "type": "string"
-                },
-                {
-                    "name": "active_until",
-                    "type": "i64"
-                },
-                {
-                    "name": "questions",
-                    "type": {
-                        "vec": {
-                            "defined": {
-                                "name": "Question"
-                            }
-                        }
-                    }
-                }
+          "name": "reward_token"
+        },
+        {
+          "name": "creator_token_account",
+          "writable": true
+        },
+        {
+          "name": "poll_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "poll_id"
+              }
             ]
+          }
         },
         {
-            "name": "initialize_registry",
-            "discriminator": [189, 181, 20, 17, 174, 57, 249, 59],
-            "accounts": [
-                {
-                    "name": "initializer",
-                    "writable": true,
-                    "signer": true
-                },
-                {
-                    "name": "registry",
-                    "writable": true,
-                    "pda": {
-                        "seeds": [
-                            {
-                                "kind": "const",
-                                "value": [114, 101, 103, 105, 115, 116, 114, 121]
-                            }
-                        ]
-                    }
-                },
-                {
-                    "name": "system_program",
-                    "address": "11111111111111111111111111111111"
-                }
-            ],
-            "args": []
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         },
         {
-            "name": "refund_poll",
-            "discriminator": [203, 5, 16, 192, 227, 13, 152, 118],
-            "accounts": [
-                {
-                    "name": "creator",
-                    "writable": true,
-                    "signer": true
-                },
-                {
-                    "name": "poll_account",
-                    "writable": true,
-                    "pda": {
-                        "seeds": [
-                            {
-                                "kind": "const",
-                                "value": [112, 111, 108, 108]
-                            },
-                            {
-                                "kind": "arg",
-                                "path": "poll_id"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "name": "poll_vault",
-                    "writable": true,
-                    "pda": {
-                        "seeds": [
-                            {
-                                "kind": "const",
-                                "value": [118, 97, 117, 108, 116]
-                            },
-                            {
-                                "kind": "arg",
-                                "path": "poll_id"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "name": "creator_token_account",
-                    "writable": true
-                },
-                {
-                    "name": "token_program",
-                    "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-                }
-            ],
-            "args": [
-                {
-                    "name": "poll_id",
-                    "type": "string"
-                }
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "poll_id",
+          "type": "string"
+        },
+        {
+          "name": "reward_amount",
+          "type": "u64"
+        },
+        {
+          "name": "total_participants",
+          "type": "u32"
+        },
+        {
+          "name": "topic",
+          "type": "string"
+        },
+        {
+          "name": "active_until",
+          "type": "i64"
+        },
+        {
+          "name": "questions",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "Question"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "refund_poll",
+      "discriminator": [
+        203,
+        5,
+        16,
+        192,
+        227,
+        13,
+        152,
+        118
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "poll_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  108,
+                  108
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "poll_id"
+              }
             ]
+          }
         },
         {
-            "name": "submit_poll_results",
-            "discriminator": [114, 144, 11, 37, 109, 217, 31, 204],
-            "accounts": [
-                {
-                    "name": "user",
-                    "writable": true,
-                    "signer": true
-                },
-                {
-                    "name": "poll_account",
-                    "writable": true,
-                    "pda": {
-                        "seeds": [
-                            {
-                                "kind": "const",
-                                "value": [112, 111, 108, 108]
-                            },
-                            {
-                                "kind": "arg",
-                                "path": "poll_id"
-                            }
-                        ]
-                    }
-                }
-            ],
-            "args": [
-                {
-                    "name": "poll_id",
-                    "type": "string"
-                },
-                {
-                    "name": "answers",
-                    "type": {
-                        "vec": {
-                            "defined": {
-                                "name": "UserAnswer"
-                            }
-                        }
-                    }
-                }
+          "name": "poll_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "poll_id"
+              }
             ]
+          }
+        },
+        {
+          "name": "creator_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
-    ],
-    "accounts": [
+      ],
+      "args": [
         {
-            "name": "PollAccount",
-            "discriminator": [109, 254, 117, 41, 232, 74, 172, 45]
-        },
-        {
-            "name": "PollRegistry",
-            "discriminator": [12, 222, 3, 215, 214, 29, 138, 168]
+          "name": "poll_id",
+          "type": "string"
         }
-    ],
-    "errors": [
+      ]
+    },
+    {
+      "name": "submit_poll_results",
+      "discriminator": [
+        114,
+        144,
+        11,
+        37,
+        109,
+        217,
+        31,
+        204
+      ],
+      "accounts": [
         {
-            "code": 6000,
-            "name": "InvalidPollId",
-            "msg": "Invalid poll ID"
+          "name": "user",
+          "writable": true,
+          "signer": true
         },
         {
-            "code": 6001,
-            "name": "AllRewardsClaimed",
-            "msg": "All rewards have been claimed"
-        },
-        {
-            "code": 6002,
-            "name": "InsufficientFunds",
-            "msg": "Insufficient funds in vault"
-        },
-        {
-            "code": 6003,
-            "name": "Unauthorized",
-            "msg": "Unauthorized action"
-        },
-        {
-            "code": 6004,
-            "name": "CalculationOverflow",
-            "msg": "Calculation overflow"
-        },
-        {
-            "code": 6005,
-            "name": "PollExpired",
-            "msg": "Poll has expired"
-        },
-        {
-            "code": 6006,
-            "name": "AlreadyParticipated",
-            "msg": "User already participated in this poll"
-        },
-        {
-            "code": 6007,
-            "name": "NoResultsFound",
-            "msg": "No results found for user"
-        },
-        {
-            "code": 6008,
-            "name": "AlreadyClaimed",
-            "msg": "Reward already claimed"
-        },
-        {
-            "code": 6009,
-            "name": "AccountTooLarge",
-            "msg": "Account size estimate exceeded allowed space"
-        },
-        {
-            "code": 6010,
-            "name": "TooManyQuestions",
-            "msg": "Too many questions (exceeds max)"
-        },
-        {
-            "code": 6011,
-            "name": "TooManyOptions",
-            "msg": "Too many options in a question (exceeds max)"
-        },
-        {
-            "code": 6012,
-            "name": "OptionStringTooLong",
-            "msg": "Option string length too long"
-        },
-        {
-            "code": 6013,
-            "name": "TopicTooLong",
-            "msg": "Topic string too long"
-        },
-        {
-            "code": 6014,
-            "name": "AllResultsRecorded",
-            "msg": "All results already recorded (no more submissions allowed)"
+          "name": "poll_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  108,
+                  108
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "poll_id"
+              }
+            ]
+          }
         }
-    ],
-    "types": [
+      ],
+      "args": [
         {
-            "name": "PollAccount",
-            "docs": ["========== DATA STRUCTURES =========="],
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "poll_id",
-                        "type": "string"
-                    },
-                    {
-                        "name": "creator",
-                        "type": "pubkey"
-                    },
-                    {
-                        "name": "reward_token",
-                        "type": "pubkey"
-                    },
-                    {
-                        "name": "reward_amount",
-                        "type": "u64"
-                    },
-                    {
-                        "name": "total_participants",
-                        "type": "u32"
-                    },
-                    {
-                        "name": "claimed_participants",
-                        "type": "u32"
-                    },
-                    {
-                        "name": "bump",
-                        "type": "u8"
-                    },
-                    {
-                        "name": "topic",
-                        "type": "string"
-                    },
-                    {
-                        "name": "active_until",
-                        "type": "i64"
-                    },
-                    {
-                        "name": "questions",
-                        "type": {
-                            "vec": {
-                                "defined": {
-                                    "name": "Question"
-                                }
-                            }
-                        }
-                    },
-                    {
-                        "name": "results",
-                        "type": {
-                            "vec": {
-                                "defined": {
-                                    "name": "UserResult"
-                                }
-                            }
-                        }
-                    }
-                ]
-            }
+          "name": "poll_id",
+          "type": "string"
         },
         {
-            "name": "PollRegistry",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "bump",
-                        "type": "u8"
-                    }
-                ]
+          "name": "answers",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "UserAnswer"
+              }
             }
-        },
-        {
-            "name": "Question",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "question_type",
-                        "type": {
-                            "defined": {
-                                "name": "QuestionType"
-                            }
-                        }
-                    },
-                    {
-                        "name": "options",
-                        "type": {
-                            "vec": "string"
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "name": "QuestionType",
-            "type": {
-                "kind": "enum",
-                "variants": [
-                    {
-                        "name": "One"
-                    },
-                    {
-                        "name": "Many"
-                    }
-                ]
-            }
-        },
-        {
-            "name": "UserAnswer",
-            "type": {
-                "kind": "enum",
-                "variants": [
-                    {
-                        "name": "Single",
-                        "fields": ["string"]
-                    },
-                    {
-                        "name": "Multiple",
-                        "fields": [
-                            {
-                                "vec": "string"
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "name": "UserResult",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "user",
-                        "type": "pubkey"
-                    },
-                    {
-                        "name": "answers",
-                        "type": {
-                            "vec": {
-                                "defined": {
-                                    "name": "UserAnswer"
-                                }
-                            }
-                        }
-                    },
-                    {
-                        "name": "timestamp",
-                        "type": "i64"
-                    },
-                    {
-                        "name": "claimed",
-                        "type": "bool"
-                    }
-                ]
-            }
+          }
         }
-    ]
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "PollAccount",
+      "discriminator": [
+        109,
+        254,
+        117,
+        41,
+        232,
+        74,
+        172,
+        45
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidPollId",
+      "msg": "Invalid poll ID"
+    },
+    {
+      "code": 6001,
+      "name": "AllRewardsClaimed",
+      "msg": "All rewards have been claimed"
+    },
+    {
+      "code": 6002,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient funds in vault"
+    },
+    {
+      "code": 6003,
+      "name": "Unauthorized",
+      "msg": "Unauthorized action"
+    },
+    {
+      "code": 6004,
+      "name": "CalculationOverflow",
+      "msg": "Calculation overflow"
+    },
+    {
+      "code": 6005,
+      "name": "PollExpired",
+      "msg": "Poll has expired"
+    },
+    {
+      "code": 6006,
+      "name": "AlreadyParticipated",
+      "msg": "User already participated in this poll"
+    },
+    {
+      "code": 6007,
+      "name": "NoResultsFound",
+      "msg": "No results found for user"
+    },
+    {
+      "code": 6008,
+      "name": "AlreadyClaimed",
+      "msg": "Reward already claimed"
+    },
+    {
+      "code": 6009,
+      "name": "TooManyQuestions",
+      "msg": "Too many questions (exceeds max)"
+    },
+    {
+      "code": 6010,
+      "name": "TooManyOptions",
+      "msg": "Too many options in a question (exceeds max)"
+    },
+    {
+      "code": 6011,
+      "name": "OptionStringTooLong",
+      "msg": "Option string length too long"
+    },
+    {
+      "code": 6012,
+      "name": "TopicTooLong",
+      "msg": "Topic string too long"
+    },
+    {
+      "code": 6013,
+      "name": "AllResultsRecorded",
+      "msg": "All results already recorded (no more submissions allowed)"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidAnswers",
+      "msg": "Invalid answers provided"
+    }
+  ],
+  "types": [
+    {
+      "name": "PollAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "poll_id",
+            "type": "string"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "reward_token",
+            "type": "pubkey"
+          },
+          {
+            "name": "reward_amount",
+            "type": "u64"
+          },
+          {
+            "name": "total_participants",
+            "type": "u32"
+          },
+          {
+            "name": "claimed_participants",
+            "type": "u32"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "topic",
+            "type": "string"
+          },
+          {
+            "name": "active_until",
+            "type": "i64"
+          },
+          {
+            "name": "questions",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Question"
+                }
+              }
+            }
+          },
+          {
+            "name": "results",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "UserResult"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Question",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "question_type",
+            "type": {
+              "defined": {
+                "name": "QuestionType"
+              }
+            }
+          },
+          {
+            "name": "options",
+            "type": {
+              "vec": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "QuestionType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "One"
+          },
+          {
+            "name": "Many"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserAnswer",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Single",
+            "fields": [
+              "string"
+            ]
+          },
+          {
+            "name": "Multiple",
+            "fields": [
+              {
+                "vec": "string"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserResult",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "answers",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "UserAnswer"
+                }
+              }
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "claimed",
+            "type": "bool"
+          }
+        ]
+      }
+    }
+  ]
 }
-
